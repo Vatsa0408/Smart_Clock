@@ -16,14 +16,12 @@ class DockStore {
     DockApp('YouTube Music', 'com.google.android.apps.youtube.music'),
     DockApp('Spotify', 'com.spotify.music'),
     DockApp('Google Home', 'com.google.android.apps.chromecast.app'),
-    DockApp('Xiaomi Home', 'com.xiaomi.smarthome'),
   ];
 
   static const _webUrls = {
     'com.google.android.apps.youtube.music': 'https://music.youtube.com',
     'com.spotify.music': 'https://open.spotify.com',
     'com.google.android.apps.chromecast.app': 'https://home.google.com',
-    'com.xiaomi.smarthome': 'https://home.mi.com',
   };
 
   bool get supported => Platform.isAndroid || Platform.isWindows;
