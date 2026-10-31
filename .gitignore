@@ -27,3 +27,12 @@ doc/api/
 
 .flutter-plugins
 .flutter-plugins-dependencies
+
+# Local tooling / docs
+.claude/
+.dart_tool/
+.idea/
+.serena/
+.tokensave/
+CLAUDE.md
+docs/
