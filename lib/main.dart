@@ -44,7 +44,7 @@ class SmartClockApp extends StatelessWidget {
         theme: ThemeData(
           useMaterial3: true,
           brightness: Brightness.dark,
-          scaffoldBackgroundColor: const Color(0xFF0F0E13),
+          scaffoldBackgroundColor: const Color(0xFF141218),
           colorScheme: ColorScheme.fromSeed(
             seedColor: const Color(0xFFD0BCFF),
             brightness: Brightness.dark,
@@ -54,7 +54,9 @@ class SmartClockApp extends StatelessWidget {
             surface: const Color(0xFF1A181F),
             surfaceContainerHighest: const Color(0xFF2B2930),
           ),
+          fontFamily: 'RobotoFlex',
           textTheme: Typography.material2021().white.apply(
+                fontFamily: 'RobotoFlex',
                 bodyColor: const Color(0xFFE6E0E9),
                 displayColor: const Color(0xFFE6E0E9),
               ),
@@ -72,18 +74,8 @@ class WallDisplay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF0F0E13),
-              Color(0xFF1A181F),
-              Color(0xFF0F0E13),
-            ],
-          ),
-        ),
+      body: ColoredBox(
+        color: const Color(0xFF141218),
         child: SizedBox.expand(
           child: FittedBox(
             child: SizedBox(

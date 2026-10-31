@@ -1,6 +1,9 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../shared/ui.dart';
 import '../../weather/view/weather_row.dart';
 import '../clock_bloc.dart';
 
@@ -12,10 +15,10 @@ const _months = [
 
 String _pad(int n) => n.toString().padLeft(2, '0');
 
-(String time, String ampm) _format(DateTime t, bool hour24) {
-  if (hour24) return ('${_pad(t.hour)}:${_pad(t.minute)}', '');
+(String hh, String mm, String ampm) _format(DateTime t, bool hour24) {
+  if (hour24) return (_pad(t.hour), _pad(t.minute), '');
   final h = t.hour % 12 == 0 ? 12 : t.hour % 12;
-  return ('$h:${_pad(t.minute)}', t.hour < 12 ? 'AM' : 'PM');
+  return ('$h', _pad(t.minute), t.hour < 12 ? 'AM' : 'PM');
 }
 
 class _Pill extends StatelessWidget {
@@ -26,187 +29,66 @@ class _Pill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        height: 44,
-        padding: const EdgeInsets.only(left: 16, right: 20),
-        decoration: BoxDecoration(
-          color: bg.withOpacity(0.9),
-          borderRadius: BorderRadius.circular(999),
-          boxShadow: [
-            BoxShadow(
-              color: bg.withOpacity(0.3),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
+        height: 48,
+        padding: const EdgeInsets.only(left: 16, right: 22),
+        decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(999)),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.location_on_outlined, size: 20, color: fg),
-            const SizedBox(width: 8),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: fg,
-                letterSpacing: 0.2,
-              ),
-            ),
+            Icon(Icons.location_on_outlined, size: 24, color: fg),
+            const SizedBox(width: 10),
+            Text(label, style: flex(20, 600, fg)),
           ],
         ),
       );
 }
 
+/// HH:MM with a blinking colon and an optional AM/PM suffix.
 class _Time extends StatelessWidget {
   const _Time({
-    required this.time,
+    required this.hh,
+    required this.mm,
     required this.ampm,
-    required this.timeSize,
+    required this.size,
     required this.ampmSize,
     required this.ampmColor,
-    required this.textColor,
+    required this.gap,
   });
-  final String time;
+  final String hh;
+  final String mm;
   final String ampm;
-  final double timeSize;
+  final double size;
   final double ampmSize;
   final Color ampmColor;
-  final Color textColor;
-
-  @override
-  Widget build(BuildContext context) => Row(
-        crossAxisAlignment: CrossAxisAlignment.baseline,
-        textBaseline: TextBaseline.alphabetic,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            time,
-            style: TextStyle(
-              fontSize: timeSize,
-              height: 0.92,
-              fontWeight: FontWeight.w700,
-              letterSpacing: -timeSize * 0.05,
-              fontFeatures: const [FontFeature.tabularFigures()],
-              color: textColor,
-              shadows: [
-                Shadow(
-                  color: Colors.black.withOpacity(0.3),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-          ),
-          if (ampm.isNotEmpty) ...[
-            SizedBox(width: timeSize > 200 ? 16 : 10),
-            Text(
-              ampm,
-              style: TextStyle(
-                fontSize: ampmSize,
-                fontWeight: FontWeight.w600,
-                color: ampmColor,
-                letterSpacing: 1.5,
-              ),
-            ),
-          ],
-        ],
-      );
-}
-
-/// Animated time widget that smoothly transitions on time change.
-class _AnimatedTime extends StatefulWidget {
-  const _AnimatedTime({
-    required this.time,
-    required this.ampm,
-    required this.timeSize,
-    required this.ampmSize,
-    required this.ampmColor,
-    required this.textColor,
-  });
-
-  final String time;
-  final String ampm;
-  final double timeSize;
-  final double ampmSize;
-  final Color ampmColor;
-  final Color textColor;
-
-  @override
-  State<_AnimatedTime> createState() => _AnimatedTimeState();
-}
-
-class _AnimatedTimeState extends State<_AnimatedTime> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _scaleAnimation;
-  late Animation<double> _opacityAnimation;
-  late Animation<double> _textColorOpacity;
-
-  String _prevTime = '';
-  String _prevAmpm = '';
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 350),
-      vsync: this,
-    );
-    _scaleAnimation = Tween<double>(begin: 0.97, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
-    );
-    _opacityAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
-    );
-    _textColorOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
-    );
-    _prevTime = widget.time;
-    _prevAmpm = widget.ampm;
-    _controller.forward();
-  }
-
-  @override
-  void didUpdateWidget(covariant _AnimatedTime oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.time != oldWidget.time || widget.ampm != oldWidget.ampm) {
-      _prevTime = oldWidget.time;
-      _prevAmpm = oldWidget.ampm;
-      _controller.reset();
-      _controller.forward();
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
+  final double gap;
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        return Transform.scale(
-          scale: _scaleAnimation.value,
-          child: Opacity(
-            opacity: _opacityAnimation.value,
-            child: _Time(
-                time: widget.time,
-                ampm: widget.ampm,
-                timeSize: widget.timeSize,
-                ampmSize: widget.ampmSize,
-                ampmColor: widget.ampmColor,
-                textColor: Color.lerp(
-                  const Color(0x00FFFFFF),
-                  Colors.white,
-                  _textColorOpacity.value,
-                ) ?? Colors.white,
+    final style = flex(size, 640, Colors.white, em: -.045, height: .9, tabular: true);
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.baseline,
+      textBaseline: TextBaseline.alphabetic,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(hh, style: style),
+        Loop(
+          builder: (_, s) => Opacity(
+            opacity: 1 - .85 * wave(s, 2), // blink: 2s
+            child: Transform.translate(
+              offset: Offset(0, -.04 * size),
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: .01 * size),
+                child: Text(':', style: style),
               ),
+            ),
           ),
-        );
-      },
+        ),
+        Text(mm, style: style),
+        if (ampm.isNotEmpty) ...[
+          SizedBox(width: gap),
+          Text(ampm, style: flex(ampmSize, 600, ampmColor)),
+        ],
+      ],
     );
   }
 }
@@ -219,24 +101,19 @@ class LocalCard extends StatelessWidget {
     return GestureDetector(
       onLongPress: () => context.read<ClockBloc>().add(const ClockFormatToggled()),
       child: _ClockCard(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF5E42A6),
-            Color(0xFF4F378B),
-            Color(0xFF3D2A6B),
-          ],
-        ),
-        accentColor: const Color(0xFFD0BCFF),
-        accentColorDark: const Color(0xFF381E72),
+        color: const Color(0xFF4F378B),
+        blobs: const [Color(0xFF593FA0), Color(0xFF573E9C)],
+        blobSizes: const [480, 440],
+        blobPos: const [
+          (left: null, right: -150, top: -190, bottom: null),
+          (left: -170, right: null, top: null, bottom: -230),
+        ],
         padding: const EdgeInsets.fromLTRB(44, 36, 44, 40),
         borderRadius: BorderRadius.circular(64),
+        delay: Duration.zero,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Top: Location pill + Date
             BlocSelector<ClockBloc, ClockState, DateTime>(
               selector: (s) => s.now,
               builder: (_, now) => Row(
@@ -244,47 +121,77 @@ class LocalCard extends StatelessWidget {
                 children: [
                   const _Pill('Current location', Color(0xFFD0BCFF), Color(0xFF381E72)),
                   Text(
-                    '${_days[now.weekday - 1]}, ${now.day} ${_months[now.month - 1]}',
-                    style: const TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w500,
-                      color: Color(0xFFEADDFF),
-                      letterSpacing: 0.3,
-                    ),
+                    '${_days[now.weekday - 1]} ${now.day} ${_months[now.month - 1]}',
+                    style: flex(26, 500, const Color(0xFFEADDFF)),
                   ),
                 ],
               ),
             ),
-            // Center: Animated Time
-            BlocBuilder<ClockBloc, ClockState>(
-              buildWhen: (prev, curr) =>
-                  prev.now != curr.now || prev.hour24 != curr.hour24,
-              builder: (_, s) {
-                final (t, ap) = _format(s.now, s.hour24);
-                return _AnimatedTime(
-                  time: t,
-                  ampm: ap,
-                  timeSize: 240,
-                  ampmSize: 44,
-                  ampmColor: const Color(0xFFD0BCFF),
-                  textColor: Colors.white,
-                );
-              },
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: BlocBuilder<ClockBloc, ClockState>(
+                    buildWhen: (a, b) =>
+                        a.now.minute != b.now.minute || a.now.hour != b.now.hour || a.hour24 != b.hour24,
+                    builder: (_, s) {
+                      final (hh, mm, ap) = _format(s.now, s.hour24);
+                      return _Time(
+                        hh: hh,
+                        mm: mm,
+                        ampm: ap,
+                        size: 224,
+                        ampmSize: 44,
+                        ampmColor: const Color(0xFFD0BCFF),
+                        gap: 18,
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(height: 22),
+                const _SecondsBar(),
+              ],
             ),
-            // Bottom: Weather
-            const WeatherRow(
-              bangalore: false,
-              icon: Icons.wb_cloudy_outlined,
-              badge: Color(0xFFD0BCFF),
-              iconColor: Color(0xFF381E72),
-              accent: Color(0xFFD0BCFF),
-              size: 1,
-            ),
+            const WeatherRow(bangalore: false),
           ],
         ),
       ),
     );
   }
+}
+
+/// Fills to (second+1)/60 with a 1s linear glide; snaps back at second 0.
+class _SecondsBar extends StatelessWidget {
+  const _SecondsBar();
+
+  @override
+  Widget build(BuildContext context) => BlocSelector<ClockBloc, ClockState, int>(
+        selector: (s) => s.now.second,
+        builder: (_, sec) => Container(
+          height: 8,
+          decoration: BoxDecoration(
+            color: const Color(0xFF6A4FA8),
+            borderRadius: BorderRadius.circular(999),
+          ),
+          clipBehavior: Clip.antiAlias,
+          alignment: Alignment.centerLeft,
+          child: TweenAnimationBuilder<double>(
+            tween: Tween(end: (sec + 1) / 60),
+            duration: sec == 0 ? Duration.zero : const Duration(seconds: 1),
+            builder: (_, f, _) => FractionallySizedBox(
+              widthFactor: f,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: const Color(0xFFD0BCFF),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
 }
 
 class IndiaCard extends StatelessWidget {
@@ -293,17 +200,13 @@ class IndiaCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _ClockCard(
-      gradient: const LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [
-          Color(0xFF7A4A5A),
-          Color(0xFF633B48),
-          Color(0xFF4A2E3A),
-        ],
-      ),
-      accentColor: const Color(0xFFEFB8C8),
-      accentColorDark: const Color(0xFF492532),
+      color: const Color(0xFF633B48),
+      blobs: const [Color(0xFF6A4150), Color(0xFF684050)],
+      blobSizes: const [400, 360],
+      blobPos: const [
+        (left: null, right: -130, top: -170, bottom: null),
+        (left: -150, right: null, top: null, bottom: -190),
+      ],
       padding: const EdgeInsets.fromLTRB(44, 36, 40, 40),
       borderRadius: const BorderRadius.only(
         topLeft: Radius.circular(64),
@@ -311,102 +214,103 @@ class IndiaCard extends StatelessWidget {
         bottomRight: Radius.circular(64),
         bottomLeft: Radius.circular(160),
       ),
+      delay: const Duration(milliseconds: 120),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const _Pill('Bangalore · India', Color(0xFFEFB8C8), Color(0xFF492532)),
           BlocBuilder<ClockBloc, ClockState>(
-            buildWhen: (prev, curr) =>
-                prev.india != curr.india || prev.hour24 != curr.hour24,
+            buildWhen: (a, b) =>
+                a.india.minute != b.india.minute || a.india.hour != b.india.hour || a.hour24 != b.hour24,
             builder: (_, s) {
-              final (t, ap) = _format(s.india, s.hour24);
+              final (hh, mm, ap) = _format(s.india, s.hour24);
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  _AnimatedTime(
-                    time: t,
+                  _Time(
+                    hh: hh,
+                    mm: mm,
                     ampm: ap,
-                    timeSize: 128,
+                    size: 124,
                     ampmSize: 30,
                     ampmColor: const Color(0xFFEFB8C8),
-                    textColor: Colors.white,
+                    gap: 12,
                   ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'IST · ${s.indiaOffset}',
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w500,
-                      color: Color(0xFFEFB8C8),
-                      letterSpacing: 0.5,
-                    ),
-                  ),
+                  const SizedBox(height: 14),
+                  Text('IST · ${s.indiaOffset}', style: flex(22, 500, const Color(0xFFEFB8C8))),
                 ],
               );
             },
           ),
-          const WeatherRow(
-            bangalore: true,
-            icon: Icons.grain,
-            badge: Color(0xFFEFB8C8),
-            iconColor: Color(0xFF492532),
-            accent: Color(0xFFEFB8C8),
-            size: 0.8,
-          ),
+          const WeatherRow(bangalore: true),
         ],
       ),
     );
   }
 }
 
-/// A reusable clock card with gradient background and subtle effects.
+typedef _BlobPos = ({double? left, double? right, double? top, double? bottom});
+
+/// Rounded card with two slowly counter-rotating background blobs.
 class _ClockCard extends StatelessWidget {
   const _ClockCard({
-    required this.gradient,
-    required this.accentColor,
-    required this.accentColorDark,
+    required this.color,
+    required this.blobs,
+    required this.blobSizes,
+    required this.blobPos,
     required this.padding,
     required this.borderRadius,
+    required this.delay,
     required this.child,
   });
 
-  final LinearGradient gradient;
-  final Color accentColor;
-  final Color accentColorDark;
-  final EdgeInsetsGeometry padding;
+  final Color color;
+  final List<Color> blobs;
+  final List<double> blobSizes;
+  final List<_BlobPos> blobPos;
+  final EdgeInsets padding;
   final BorderRadius borderRadius;
+  final Duration delay;
   final Widget child;
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: padding,
-      decoration: BoxDecoration(
-        gradient: gradient,
-        borderRadius: borderRadius,
-        boxShadow: [
-          BoxShadow(
-            color: accentColor.withOpacity(0.15),
-            blurRadius: 30,
-            offset: const Offset(0, 10),
-            spreadRadius: -5,
+  Widget build(BuildContext context) => Rise(
+        delay: delay,
+        duration: const Duration(milliseconds: 900),
+        child: ClipRRect(
+          borderRadius: borderRadius,
+          child: ColoredBox(
+            color: color,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                for (final i in [0, 1])
+                  Positioned(
+                    left: blobPos[i].left,
+                    right: blobPos[i].right,
+                    top: blobPos[i].top,
+                    bottom: blobPos[i].bottom,
+                    width: blobSizes[i],
+                    height: blobSizes[i],
+                    child: Loop(
+                      builder: (_, s) => Transform.rotate(
+                        // 90s forward / 130s reverse
+                        angle: (i == 0 ? 1 : -1) * 2 * math.pi * s / (i == 0 ? 90 : 130),
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: blobs[i],
+                            borderRadius: BorderRadius.circular(blobSizes[i] * .3),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                Padding(padding: padding, child: child),
+              ],
+            ),
           ),
-          BoxShadow(
-            color: Colors.black.withOpacity(0.3),
-            blurRadius: 20,
-            offset: const Offset(0, 4),
-          ),
-        ],
-        border: Border.all(
-          color: accentColor.withOpacity(0.15),
-          width: 1,
         ),
-      ),
-      child: DefaultTextStyle.merge(
-        style: TextStyle(color: accentColor.withOpacity(0.9)),
-        child: child,
-      ),
-    );
-  }
+      );
 }

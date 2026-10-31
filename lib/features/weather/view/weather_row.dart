@@ -1,239 +1,142 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../shared/ui.dart';
 import '../weather_bloc.dart';
 import '../weather_store.dart';
 
-/// Temp + condition + H/L row; [bangalore] picks which reading to show.
+/// Icon + temp + condition + H/L row; [bangalore] picks the reading and palette.
 class WeatherRow extends StatelessWidget {
-  const WeatherRow({
-    super.key,
-    required this.bangalore,
-    required this.icon,
-    required this.badge,
-    required this.iconColor,
-    required this.accent,
-    required this.size,
-  });
+  const WeatherRow({super.key, required this.bangalore});
 
   final bool bangalore;
-  final IconData icon;
-  final Color badge;
-  final Color iconColor;
-  final Color accent;
-
-  /// 1 for the large (local) variant, <1 for the compact one.
-  final double size;
 
   @override
   Widget build(BuildContext context) {
-    final big = size == 1;
+    final big = !bangalore;
+    final accent = bangalore ? const Color(0xFFEFB8C8) : const Color(0xFFD0BCFF);
+    final fg = bangalore ? const Color(0xFF492532) : const Color(0xFF381E72);
+    final text = bangalore ? const Color(0xFFFFD8E4) : const Color(0xFFEADDFF);
     return BlocSelector<WeatherBloc, WeatherState, Weather?>(
       selector: (s) => bangalore ? s.bangalore : s.local,
       builder: (context, w) {
         if (w == null) return const SizedBox.shrink();
-        return _AnimatedWeatherRow(
-          key: ValueKey('${bangalore}_${w.temp}_${w.condition}'),
-          big: big,
-          icon: icon,
-          badge: badge,
-          iconColor: iconColor,
-          accent: accent,
-          temp: w.temp,
-          condition: w.condition,
-          high: w.high,
-          low: w.low,
+        return Row(
+          children: [
+            _WeatherIcon(rain: bangalore, size: big ? 112 : 88, badge: accent, fg: fg),
+            SizedBox(width: big ? 28 : 22),
+            Text('${w.temp}°', style: flex(big ? 88 : 72, 600, Colors.white, em: -.03, height: 1)),
+            SizedBox(width: big ? 28 : 22),
+            Flexible(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(w.condition, style: flex(big ? 30 : 24, 600, text), overflow: TextOverflow.ellipsis),
+                  const SizedBox(height: 4),
+                  Text('H ${w.high}° · L ${w.low}°', style: flex(big ? 22 : 20, 500, accent)),
+                ],
+              ),
+            ),
+          ],
         );
       },
     );
   }
 }
 
-class _AnimatedWeatherRow extends StatefulWidget {
-  const _AnimatedWeatherRow({
-    super.key,
-    required this.big,
-    required this.icon,
-    required this.badge,
-    required this.iconColor,
-    required this.accent,
-    required this.temp,
-    required this.condition,
-    required this.high,
-    required this.low,
-  });
-
-  final bool big;
-  final IconData icon;
+/// Spinning blob badge with a bobbing sun/cloud (or rain cloud) glyph.
+class _WeatherIcon extends StatelessWidget {
+  const _WeatherIcon({required this.rain, required this.size, required this.badge, required this.fg});
+  final bool rain;
+  final double size;
   final Color badge;
-  final Color iconColor;
-  final Color accent;
-  final int temp;
-  final String condition;
-  final int high;
-  final int low;
+  final Color fg;
 
   @override
-  State<_AnimatedWeatherRow> createState() => _AnimatedWeatherRowState();
+  Widget build(BuildContext context) => Loop(
+        builder: (_, s) => Transform.translate(
+          offset: Offset(0, -6 * wave(s, 5)), // bob: 5s
+          child: CustomPaint(size: Size.square(size), painter: _IconPainter(rain, badge, fg, s)),
+        ),
+      );
 }
 
-class _AnimatedWeatherRowState extends State<_AnimatedWeatherRow> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _scaleAnimation;
-  late Animation<double> _opacityAnimation;
-
-  int _prevTemp = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 500),
-      vsync: this,
-    );
-    _scaleAnimation = Tween<double>(begin: 0.9, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.elasticOut),
-    );
-    _opacityAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
-    );
-    _prevTemp = widget.temp;
-    _controller.forward();
-  }
+class _IconPainter extends CustomPainter {
+  _IconPainter(this.rain, this.badge, this.fg, this.s);
+  final bool rain;
+  final Color badge;
+  final Color fg;
+  final double s;
 
   @override
-  void didUpdateWidget(covariant _AnimatedWeatherRow oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.temp != oldWidget.temp ||
-        widget.condition != oldWidget.condition ||
-        widget.high != oldWidget.high ||
-        widget.low != oldWidget.low) {
-      _prevTemp = oldWidget.temp;
-      _controller.reset();
-      _controller.forward();
+  void paint(Canvas canvas, Size size) {
+    canvas.scale(size.width / 100);
+    // Blob spins around its bounding-box centre, 36s per turn.
+    canvas.save();
+    canvas.translate(51.21, 50);
+    canvas.rotate(2 * math.pi * s / 36);
+    canvas.translate(-51.21, -50);
+    canvas.drawPath(blobPath, Paint()..color = badge);
+    canvas.restore();
+
+    canvas.translate(26, 26);
+    canvas.scale(2);
+    final stroke = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.7
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round
+      ..color = fg;
+    final fill = Paint()..color = badge;
+
+    if (rain) {
+      final cloud = Path()
+        ..moveTo(7.5, 14)
+        ..lineTo(16.5, 14)
+        ..arcToPoint(const Offset(17, 6.43), radius: const Radius.circular(3.8), clockwise: false)
+        ..arcToPoint(const Offset(6.4, 7.6), radius: const Radius.circular(5.5), clockwise: false)
+        ..arcToPoint(const Offset(7.5, 14), radius: const Radius.circular(3.2), clockwise: false)
+        ..close();
+      canvas.drawPath(cloud, fill);
+      canvas.drawPath(cloud, stroke);
+      // rain: 1.4s ease-in; fade in to 30%, out by 100%, drifting down-left.
+      final p = (s % 1.4) / 1.4;
+      final a = p < .3 ? p / .3 : 1 - (p - .3) / .7;
+      final e = Curves.easeIn.transform(p);
+      canvas.save();
+      canvas.translate(.8 - 1.6 * e, -1.5 + 3.5 * e);
+      final drops = Path();
+      for (final x in [9.0, 13.0, 17.0]) {
+        drops
+          ..moveTo(x, 17.5)
+          ..relativeLineTo(-1, 2);
+      }
+      canvas.drawPath(drops, stroke..color = fg.withValues(alpha: a.clamp(0, 1)));
+      canvas.restore();
+    } else {
+      canvas.drawCircle(const Offset(9, 9), 3, stroke);
+      final rays = Path()
+        ..moveTo(9, 3)..relativeLineTo(0, 1.2)
+        ..moveTo(3, 9)..relativeLineTo(1.2, 0)
+        ..moveTo(4.8, 4.8)..relativeLineTo(.9, .9)
+        ..moveTo(13.2, 4.8)..relativeLineTo(-.9, .9);
+      canvas.drawPath(rays, stroke..color = fg.withValues(alpha: .3 + .7 * (1 - wave(s, 2.4))));
+      stroke.color = fg;
+      final cloud = Path()
+        ..moveTo(8.5, 20)
+        ..lineTo(17, 20)
+        ..arcToPoint(const Offset(17.4, 13.03), radius: const Radius.circular(3.5), clockwise: false)
+        ..arcToPoint(const Offset(8, 14.2), radius: const Radius.circular(5), clockwise: false)
+        ..arcToPoint(const Offset(8.5, 20), radius: const Radius.circular(3), clockwise: false)
+        ..close();
+      canvas.drawPath(cloud, fill);
+      canvas.drawPath(cloud, stroke);
     }
   }
 
   @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        return Transform.scale(
-          scale: _scaleAnimation.value,
-          child: Opacity(
-            opacity: _opacityAnimation.value,
-            child: Row(
-              children: [
-                // Weather icon badge
-                Container(
-                  width: widget.big ? 112 : 88,
-                  height: widget.big ? 112 : 88,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        widget.badge,
-                        Color.lerp(widget.badge, Colors.black, 0.2)!,
-                      ],
-                    ),
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: widget.badge.withOpacity(0.3),
-                        blurRadius: 20,
-                        offset: const Offset(0, 8),
-                        spreadRadius: -4,
-                      ),
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      // Subtle inner highlight
-                      Container(
-                        width: widget.big ? 100 : 78,
-                        height: widget.big ? 100 : 78,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: RadialGradient(
-                            center: Alignment.topLeft,
-                            radius: 1.2,
-                            colors: [
-                              Colors.white.withOpacity(0.15),
-                              Colors.transparent,
-                            ],
-                          ),
-                        ),
-                      ),
-                      Icon(widget.icon, size: widget.big ? 64 : 50, color: widget.iconColor),
-                    ],
-                  ),
-                ),
-                SizedBox(width: widget.big ? 28 : 22),
-                // Temperature
-                Text(
-                  '${widget.temp}°',
-                  style: TextStyle(
-                    fontSize: widget.big ? 88 : 72,
-                    height: 0.92,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: widget.big ? -2.6 : -2.2,
-                    fontFeatures: const [FontFeature.tabularFigures()],
-                    color: Colors.white,
-                    shadows: [
-                      Shadow(
-                        color: Colors.black.withOpacity(0.3),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(width: widget.big ? 28 : 22),
-                // Condition + H/L
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      widget.condition,
-                      style: TextStyle(
-                        fontSize: widget.big ? 30 : 24,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                        letterSpacing: 0.2,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'H ${widget.high}° · L ${widget.low}°',
-                      style: TextStyle(
-                        fontSize: widget.big ? 22 : 20,
-                        fontWeight: FontWeight.w500,
-                        color: widget.accent,
-                        letterSpacing: 0.3,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
+  bool shouldRepaint(_IconPainter old) => old.s != s || old.rain != rain || old.badge != badge;
 }
