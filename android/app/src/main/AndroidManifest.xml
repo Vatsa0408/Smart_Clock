@@ -41,5 +41,8 @@
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
         </intent>
+        <package android:name="com.google.android.apps.youtube.music"/>
+        <package android:name="com.google.android.apps.chromecast.app"/>
+        <package android:name="com.xiaomi.smarthome"/>
     </queries>
 </manifest>
