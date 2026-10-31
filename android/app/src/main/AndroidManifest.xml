@@ -42,6 +42,7 @@
             <data android:mimeType="text/plain"/>
         </intent>
         <package android:name="com.google.android.apps.youtube.music"/>
+        <package android:name="com.spotify.music"/>
         <package android:name="com.google.android.apps.chromecast.app"/>
         <package android:name="com.xiaomi.smarthome"/>
     </queries>

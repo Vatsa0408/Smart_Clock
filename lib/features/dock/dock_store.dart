@@ -14,12 +14,14 @@ class DockStore {
 
   static const apps = [
     DockApp('YouTube Music', 'com.google.android.apps.youtube.music'),
+    DockApp('Spotify', 'com.spotify.music'),
     DockApp('Google Home', 'com.google.android.apps.chromecast.app'),
     DockApp('Xiaomi Home', 'com.xiaomi.smarthome'),
   ];
 
   static const _webUrls = {
     'com.google.android.apps.youtube.music': 'https://music.youtube.com',
+    'com.spotify.music': 'https://open.spotify.com',
     'com.google.android.apps.chromecast.app': 'https://home.google.com',
     'com.xiaomi.smarthome': 'https://home.mi.com',
   };
@@ -40,6 +42,12 @@ class DockStore {
       } else if (Platform.isWindows) {
         await launchUrl(Uri.parse(_webUrls[app.package]!));
       }
-    } catch (_) {}
+    } catch (_) {
+      // Android: app not installed -> open the web version instead.
+      if (Platform.isAndroid) {
+        await launchUrl(Uri.parse(_webUrls[app.package]!))
+            .catchError((_) => false);
+      }
+    }
   }
 }

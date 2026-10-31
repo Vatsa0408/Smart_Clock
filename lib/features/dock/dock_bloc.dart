@@ -8,7 +8,7 @@ part 'dock_state.dart';
 
 class DockBloc extends Bloc<DockEvent, DockState> {
   DockBloc(this._store)
-      : super(DockState(apps: DockStore.apps, enabled: _store.supported)) {
+    : super(DockState(apps: DockStore.apps, enabled: _store.supported)) {
     on<DockAppPressed>((e, emit) => _store.launch(e.app));
   }
 

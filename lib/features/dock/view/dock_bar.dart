@@ -5,6 +5,7 @@ import '../dock_bloc.dart';
 
 const _icons = [
   (Icons.music_note, Color(0xFFD0BCFF), Color(0xFF381E72)),
+  (Icons.graphic_eq, Color(0xFFB4E5BC), Color(0xFF0F3D1E)),
   (Icons.home_outlined, Color(0xFFEFB8C8), Color(0xFF492532)),
   (Icons.apps, Color(0xFFCCC2DC), Color(0xFF332D41)),
 ];
@@ -25,30 +26,29 @@ class DockBar extends StatelessWidget {
               child: Material(
                 color: const Color(0xFF2B2930),
                 borderRadius: BorderRadius.circular(58),
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(58),
-                  onTap: state.enabled
-                      ? () => context.read<DockBloc>().add(DockAppPressed(app))
-                      : null,
-                  child: Padding(
-                    padding: const EdgeInsets.only(left: 20, right: 36),
-                    child: Row(children: [
-                      Container(
+                child: Tooltip(
+                  message: app.label,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(58),
+                    onTap: state.enabled
+                        ? () =>
+                              context.read<DockBloc>().add(DockAppPressed(app))
+                        : null,
+                    child: Center(
+                      child: Container(
                         width: 76,
                         height: 76,
-                        decoration: BoxDecoration(color: _icons[i].$2, shape: BoxShape.circle),
-                        child: Icon(_icons[i].$1, size: 40, color: _icons[i].$3),
+                        decoration: BoxDecoration(
+                          color: _icons[i].$2,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          _icons[i].$1,
+                          size: 40,
+                          color: _icons[i].$3,
+                        ),
                       ),
-                      const SizedBox(width: 22),
-                      Flexible(
-                        child: Text(app.label,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                                fontSize: 28,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFFE6E0E9))),
-                      ),
-                    ]),
+                    ),
                   ),
                 ),
               ),
