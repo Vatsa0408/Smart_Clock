@@ -17,7 +17,6 @@ import 'features/weather/weather_store.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // Hide status + navigation bars; a swipe from the edge shows them briefly.
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
   HydratedBloc.storage = await HydratedStorage.build(
     storageDirectory: HydratedStorageDirectory(
@@ -45,9 +44,16 @@ class SmartClockApp extends StatelessWidget {
         theme: ThemeData(
           useMaterial3: true,
           brightness: Brightness.dark,
-          scaffoldBackgroundColor: const Color(0xFF141218),
+          scaffoldBackgroundColor: const Color(0xFF0F0E13),
           colorScheme: ColorScheme.fromSeed(
-              seedColor: const Color(0xFFD0BCFF), brightness: Brightness.dark),
+            seedColor: const Color(0xFFD0BCFF),
+            brightness: Brightness.dark,
+            primary: const Color(0xFFD0BCFF),
+            secondary: const Color(0xFFEFB8C8),
+            tertiary: const Color(0xFFB4E5BC),
+            surface: const Color(0xFF1A181F),
+            surfaceContainerHighest: const Color(0xFF2B2930),
+          ),
           textTheme: Typography.material2021().white.apply(
                 bodyColor: const Color(0xFFE6E0E9),
                 displayColor: const Color(0xFFE6E0E9),
@@ -66,27 +72,40 @@ class WallDisplay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SizedBox.expand(
-        child: FittedBox(
-          child: SizedBox(
-            width: 1280,
-            height: 800,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 28),
-              child: Column(
-                children: [
-                  const Expanded(
-                    child: Row(children: [
-                      Expanded(flex: 175, child: LocalCard()),
-                      SizedBox(width: 20),
-                      Expanded(flex: 100, child: IndiaCard()),
-                    ]),
-                  ),
-                  const SizedBox(height: 20),
-                  const SizedBox(height: 116, child: DockBar()),
-                  const SizedBox(height: 20),
-                  const SizedBox(height: 92, child: SensorStrip()),
-                ],
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFF0F0E13),
+              Color(0xFF1A181F),
+              Color(0xFF0F0E13),
+            ],
+          ),
+        ),
+        child: SizedBox.expand(
+          child: FittedBox(
+            child: SizedBox(
+              width: 1280,
+              height: 800,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 28),
+                child: Column(
+                  children: [
+                    const Expanded(
+                      child: Row(children: [
+                        Expanded(flex: 175, child: LocalCard()),
+                        SizedBox(width: 20),
+                        Expanded(flex: 100, child: IndiaCard()),
+                      ]),
+                    ),
+                    const SizedBox(height: 20),
+                    const SizedBox(height: 116, child: DockBar()),
+                    const SizedBox(height: 20),
+                    const SizedBox(height: 92, child: SensorStrip()),
+                  ],
+                ),
               ),
             ),
           ),

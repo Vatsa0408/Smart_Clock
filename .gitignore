@@ -30,11 +30,14 @@ doc/api/
 
 # Local tooling / docs
 .claude/
+.opencode/
 .dart_tool/
 .idea/
 .serena/
 .tokensave/
 CLAUDE.md
+screenshots/
+build_windows.log
 docs/
 
 # Secrets: Xiaomi sensor MACs + bindkeys
