@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hydrated_bloc/hydrated_bloc.dart';
 import 'package:path_provider/path_provider.dart';
@@ -16,6 +17,8 @@ import 'features/weather/weather_store.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Hide status + navigation bars; a swipe from the edge shows them briefly.
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
   HydratedBloc.storage = await HydratedStorage.build(
     storageDirectory: HydratedStorageDirectory(
       (await getApplicationSupportDirectory()).path,
@@ -33,7 +36,7 @@ class SmartClockApp extends StatelessWidget {
       providers: [
         BlocProvider(create: (_) => ClockBloc()),
         BlocProvider(create: (_) => WeatherBloc(const SampleWeatherStore())..add(const WeatherRequested())),
-        BlocProvider(create: (_) => SensorBloc(const SampleSensorStore())..add(const SensorRequested())),
+        BlocProvider(create: (_) => SensorBloc(const BleSensorStore())..add(const SensorRequested())),
         BlocProvider(create: (_) => DockBloc(const DockStore())),
       ],
       child: MaterialApp(
@@ -82,7 +85,7 @@ class WallDisplay extends StatelessWidget {
                   const SizedBox(height: 20),
                   const SizedBox(height: 116, child: DockBar()),
                   const SizedBox(height: 20),
-                  const SizedBox(height: 72, child: SensorStrip()),
+                  const SizedBox(height: 92, child: SensorStrip()),
                 ],
               ),
             ),

@@ -10,10 +10,11 @@ part 'clock_state.dart';
 
 class ClockBloc extends HydratedBloc<ClockEvent, ClockState> {
   ClockBloc({ClockStore store = const ClockStore()})
-      : super(ClockState(now: store.now())) {
+    : super(ClockState(now: store.now())) {
     on<ClockTicked>((e, emit) => emit(state.copyWith(now: e.now)));
     on<ClockFormatToggled>(
-        (e, emit) => emit(state.copyWith(hour24: !state.hour24)));
+      (e, emit) => emit(state.copyWith(hour24: !state.hour24)),
+    );
     _sub = store.ticks().listen((t) => add(ClockTicked(t)));
   }
 

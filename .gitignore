@@ -36,3 +36,10 @@ doc/api/
 .tokensave/
 CLAUDE.md
 docs/
+
+# Secrets: Xiaomi sensor MACs + bindkeys
+assets/config/sensors.json
+assets/config/sensors.example.json
+
+# Local tooling that handles Xiaomi account data
+python/

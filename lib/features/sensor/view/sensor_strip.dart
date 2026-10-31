@@ -1,100 +1,97 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../clock/clock_bloc.dart';
 import '../sensor_bloc.dart';
 import '../sensor_store.dart';
+
+/// Readings older than this are shown as "--".
+const _staleAfter = Duration(minutes: 30);
 
 class SensorStrip extends StatelessWidget {
   const SensorStrip({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return BlocSelector<SensorBloc, SensorState, SensorReading?>(
-      selector: (s) => s.reading,
-      builder: (context, r) => Row(children: [
-        const Expanded(
-          child: _Tile(Icons.home_outlined, Color(0xFFCCC2DC), Color(0xFF332D41),
-              child: _Title()),
-        ),
-        const SizedBox(width: 20),
-        Expanded(
-          child: _Tile(Icons.thermostat, const Color(0xFFEFB8C8), const Color(0xFF492532),
-              child: _Value(r == null ? '--' : '${r.temperature}°C', 'Temperature')),
-        ),
-        const SizedBox(width: 20),
-        Expanded(
-          child: _Tile(Icons.water_drop_outlined, const Color(0xFFD0BCFF), const Color(0xFF381E72),
-              child: _Value(r == null ? '--' : '${r.humidity}%', 'Humidity')),
-        ),
-      ]),
+    // Rebuild once a minute (reuses the clock ticker) so stale readings expire.
+    context.select((ClockBloc b) => b.state.now.minute);
+    final rooms = context.select((SensorBloc b) => b.state.rooms);
+    final now = DateTime.now();
+    return Row(children: [
+      for (final (i, r) in rooms.indexed) ...[
+        if (i > 0) const SizedBox(width: 20),
+        Expanded(child: _RoomCard(r, fresh: r.seenAt != null && now.difference(r.seenAt!) < _staleAfter)),
+      ],
+    ]);
+  }
+}
+
+class _RoomCard extends StatelessWidget {
+  const _RoomCard(this.room, {required this.fresh});
+  final RoomSensor room;
+  final bool fresh;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = fresh ? room.temperature : null;
+    final h = fresh ? room.humidity : null;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 26),
+      decoration: BoxDecoration(
+          color: const Color(0xFF211F26), borderRadius: BorderRadius.circular(40)),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(room.name,
+              style: const TextStyle(
+                  fontSize: 18, height: 1, fontWeight: FontWeight.w600, color: Color(0xFFCAC4D0))),
+          const SizedBox(height: 8),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Row(children: [
+              const _Badge(Icons.thermostat, Color(0xFFEFB8C8), Color(0xFF492532)),
+              const SizedBox(width: 10),
+              _Value(t == null ? '--' : '${t.toStringAsFixed(1)}°C'),
+              const SizedBox(width: 22),
+              const _Badge(Icons.water_drop_outlined, Color(0xFFD0BCFF), Color(0xFF381E72)),
+              const SizedBox(width: 10),
+              _Value(h == null ? '--' : '${h.round()}%'),
+            ]),
+          ),
+        ],
+      ),
     );
   }
 }
 
-class _Tile extends StatelessWidget {
-  const _Tile(this.icon, this.bg, this.fg, {required this.child});
+class _Badge extends StatelessWidget {
+  const _Badge(this.icon, this.bg, this.fg);
   final IconData icon;
   final Color bg;
   final Color fg;
-  final Widget child;
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.only(left: 12, right: 28),
-        decoration: BoxDecoration(
-            color: const Color(0xFF211F26), borderRadius: BorderRadius.circular(36)),
-        child: Row(children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(color: bg, shape: BoxShape.circle),
-            child: Icon(icon, size: 26, color: fg),
-          ),
-          const SizedBox(width: 16),
-          child,
-        ]),
-      );
-}
-
-class _Title extends StatelessWidget {
-  const _Title();
-
-  @override
-  Widget build(BuildContext context) => const Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Indoor',
-              style: TextStyle(fontSize: 26, height: 1, fontWeight: FontWeight.w600, color: Color(0xFFE6E0E9))),
-          SizedBox(height: 2),
-          Text('Xiaomi sensor',
-              style: TextStyle(fontSize: 17, height: 1, fontWeight: FontWeight.w500, color: Color(0xFFCAC4D0))),
-        ],
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(color: bg, shape: BoxShape.circle),
+        child: Icon(icon, size: 20, color: fg),
       );
 }
 
 class _Value extends StatelessWidget {
-  const _Value(this.value, this.label);
-  final String value;
-  final String label;
+  const _Value(this.text);
+  final String text;
 
   @override
-  Widget build(BuildContext context) => Row(
-        crossAxisAlignment: CrossAxisAlignment.baseline,
-        textBaseline: TextBaseline.alphabetic,
-        children: [
-          Text(value,
-              style: const TextStyle(
-                fontSize: 38,
-                height: 1,
-                fontWeight: FontWeight.w600,
-                letterSpacing: -0.76,
-                fontFeatures: [FontFeature.tabularFigures()],
-                color: Colors.white,
-              )),
-          const SizedBox(width: 12),
-          Text(label,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500, color: Color(0xFFCAC4D0))),
-        ],
-      );
+  Widget build(BuildContext context) => Text(text,
+      style: const TextStyle(
+        fontSize: 34,
+        height: 1,
+        fontWeight: FontWeight.w600,
+        letterSpacing: -0.68,
+        fontFeatures: [FontFeature.tabularFigures()],
+        color: Colors.white,
+      ));
 }
