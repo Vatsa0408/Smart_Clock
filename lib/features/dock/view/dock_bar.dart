@@ -1,244 +1,123 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../shared/ui.dart';
 import '../dock_bloc.dart';
+import '../dock_store.dart';
 
-const _appConfigs = [
-  DockAppConfig(
-    label: 'YouTube Music',
-    icon: Icons.music_note,
-    gradient: [Color(0xFFD0BCFF), Color(0xFFB4A0E6)],
-    iconColor: Color(0xFF381E72),
-    glowColor: Color(0xFFD0BCFF),
-  ),
-  DockAppConfig(
-    label: 'Spotify',
-    icon: Icons.graphic_eq,
-    gradient: [Color(0xFFB4E5BC), Color(0xFF93D59A)],
-    iconColor: Color(0xFF0F3D1E),
-    glowColor: Color(0xFF1DB954),
-  ),
-  DockAppConfig(
-    label: 'Google Home',
-    icon: Icons.home_outlined,
-    gradient: [Color(0xFFEFB8C8), Color(0xFFE8A3B5)],
-    iconColor: Color(0xFF492532),
-    glowColor: Color(0xFFEFB8C8),
-  ),
+/// Icon + badge colours per dock slot (design order: purple, rose, lilac).
+const _slots = [
+  (icon: Icons.music_note_rounded, bg: Color(0xFFD0BCFF), fg: Color(0xFF381E72)),
+  (icon: Icons.graphic_eq_rounded, bg: Color(0xFFEFB8C8), fg: Color(0xFF492532)),
+  (icon: Icons.home_outlined, bg: Color(0xFFCCC2DC), fg: Color(0xFF332D41)),
 ];
 
-class DockAppConfig {
-  const DockAppConfig({
-    required this.label,
-    required this.icon,
-    required this.gradient,
-    required this.iconColor,
-    required this.glowColor,
-  });
-
-  final String label;
-  final IconData icon;
-  final List<Color> gradient;
-  final Color iconColor;
-  final Color glowColor;
-}
-
-/// Individual animated dock item with scale and glow effects.
-class _DockItem extends StatefulWidget {
-  const _DockItem({
-    super.key,
-    required this.config,
-    required this.enabled,
-    required this.onTap,
-    required this.index,
-  });
-
-  final DockAppConfig config;
-  final bool enabled;
-  final VoidCallback onTap;
-  final int index;
-
-  @override
-  State<_DockItem> createState() => _DockItemState();
-}
-
-class _DockItemState extends State<_DockItem> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _scaleAnimation;
-  late Animation<double> _glowAnimation;
-
-  bool _isPressed = false;
-  bool _isHovered = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 200),
-      vsync: this,
-    );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.92).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
-    );
-    _glowAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
-    );
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _handleTapDown(TapDownDetails _) {
-    if (!widget.enabled) return;
-    setState(() => _isPressed = true);
-    _controller.forward();
-  }
-
-  void _handleTapUp(TapUpDetails _) {
-    if (!widget.enabled) return;
-    setState(() => _isPressed = false);
-    _controller.reverse();
-    widget.onTap();
-  }
-
-  void _handleTapCancel() {
-    setState(() => _isPressed = false);
-    _controller.reverse();
-  }
-
-  void _handleHover(bool hovering) {
-    if (!widget.enabled) return;
-    setState(() => _isHovered = hovering);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final config = widget.config;
-    final isActive = widget.enabled && (_isPressed || _isHovered);
-
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        final scale = _scaleAnimation.value;
-        final glowOpacity = _glowAnimation.value * (isActive ? 1.0 : 0.0);
-
-        return Transform.scale(
-          scale: scale,
-          child: MouseRegion(
-            onEnter: (_) => _handleHover(true),
-            onExit: (_) => _handleHover(false),
-            cursor: widget.enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
-            child: GestureDetector(
-              onTapDown: _handleTapDown,
-              onTapUp: _handleTapUp,
-              onTapCancel: _handleTapCancel,
-              child: Opacity(
-                opacity: widget.enabled ? 1.0 : 0.5,
-                child: Container(
-                  width: 100,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(64),
-                    boxShadow: [
-                      if (widget.enabled && glowOpacity > 0)
-                        BoxShadow(
-                          color: config.glowColor.withOpacity(0.3 * glowOpacity),
-                          blurRadius: 24 * glowOpacity,
-                          spreadRadius: 4 * glowOpacity,
-                          offset: const Offset(0, 4),
-                        ),
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.3),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(64),
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        // Background gradient
-                        Container(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: config.gradient,
-                            ),
-                          ),
-                        ),
-                        // Subtle inner glow
-                        if (widget.enabled)
-                          Container(
-                            decoration: BoxDecoration(
-                              gradient: RadialGradient(
-                                center: Alignment.topLeft,
-                                radius: 1.5,
-                                colors: [
-                                  Colors.white.withOpacity(0.15),
-                                  Colors.transparent,
-                                ],
-                              ),
-                            ),
-                          ),
-                        // Icon
-                        Icon(
-                          config.icon,
-                          size: 44,
-                          color: config.iconColor,
-                        ),
-                        // Pressed overlay
-                        if (_isPressed)
-                          Container(
-                            color: Colors.white.withOpacity(0.15),
-                          ),
-                        // Disabled overlay
-                        if (!widget.enabled)
-                          Container(
-                            color: Colors.black.withOpacity(0.3),
-                          ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
+/// Spotify sits second in the store; the design's rose/home slots map by index.
 class DockBar extends StatelessWidget {
   const DockBar({super.key});
 
   @override
   Widget build(BuildContext context) {
     final state = context.watch<DockBloc>().state;
-
-    // Limit to 3 apps (YouTube Music, Spotify, Google Home)
     final apps = state.apps.take(3).toList();
 
     return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
       children: [
         for (final (i, app) in apps.indexed) ...[
-          if (i > 0) const SizedBox(width: 28),
-          _DockItem(
-            key: ValueKey(app.package),
-            config: _appConfigs[i % _appConfigs.length],
-            enabled: state.enabled,
-            onTap: () => context.read<DockBloc>().add(DockAppPressed(app)),
-            index: i,
+          if (i > 0) const SizedBox(width: 20),
+          Expanded(
+            child: Rise(
+              key: ValueKey(app.package),
+              delay: Duration(milliseconds: 300 + 100 * i),
+              duration: const Duration(milliseconds: 800),
+              child: _DockItem(
+                app: app,
+                slot: _slots[i % _slots.length],
+                phase: i * 2.3 / 7, // morph delays 0 / -2.3s / -4.6s
+                onTap: state.enabled ? () => context.read<DockBloc>().add(DockAppPressed(app)) : null,
+              ),
+            ),
           ),
         ],
       ],
+    );
+  }
+}
+
+class _DockItem extends StatefulWidget {
+  const _DockItem({required this.app, required this.slot, required this.phase, required this.onTap});
+  final DockApp app;
+  final ({IconData icon, Color bg, Color fg}) slot;
+  final double phase;
+  final VoidCallback? onTap;
+
+  @override
+  State<_DockItem> createState() => _DockItemState();
+}
+
+class _DockItemState extends State<_DockItem> {
+  bool _hover = false, _pressed = false, _focus = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final slot = widget.slot;
+    return FocusableActionDetector(
+      enabled: widget.onTap != null,
+      onShowHoverHighlight: (v) => setState(() => _hover = v),
+      onShowFocusHighlight: (v) => setState(() => _focus = v),
+      actions: {
+        ActivateIntent: CallbackAction<ActivateIntent>(onInvoke: (_) => widget.onTap?.call()),
+      },
+      mouseCursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTapDown: (_) => setState(() => _pressed = true),
+        onTapUp: (_) => setState(() => _pressed = false),
+        onTapCancel: () => setState(() => _pressed = false),
+        onTap: widget.onTap,
+        child: AnimatedScale(
+          scale: _pressed ? .96 : 1,
+          duration: const Duration(milliseconds: 180),
+          curve: const Cubic(.2, 0, 0, 1),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            height: 116,
+            padding: const EdgeInsets.only(left: 20, right: 36),
+            decoration: BoxDecoration(
+              color: _hover ? const Color(0xFF36343B) : const Color(0xFF2B2930),
+              borderRadius: BorderRadius.circular(58),
+              border: Border.all(
+                color: _focus ? const Color(0xFFD0BCFF) : Colors.transparent,
+                width: 4,
+              ),
+            ),
+            child: Row(
+              children: [
+                Loop(
+                  builder: (_, s) => Container(
+                    width: 76,
+                    height: 76,
+                    decoration: BoxDecoration(
+                      color: slot.bg,
+                      // morph: 50% <-> 30% radius, 7s
+                      borderRadius: BorderRadius.circular(76 * (.5 - .2 * wave(s, 7, widget.phase))),
+                    ),
+                    child: Icon(slot.icon, size: 40, color: slot.fg),
+                  ),
+                ),
+                const SizedBox(width: 22),
+                Flexible(
+                  child: Text(
+                    widget.app.label,
+                    overflow: TextOverflow.ellipsis,
+                    style: flex(28, 600, const Color(0xFFE6E0E9)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
