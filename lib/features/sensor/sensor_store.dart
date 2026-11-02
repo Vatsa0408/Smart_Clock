@@ -13,13 +13,14 @@ typedef SensorConfig = ({String mac, String key});
 
 final class RoomSensor extends Equatable {
   const RoomSensor(this.name,
-      {this.mac = '', this.key = '', this.temperature, this.humidity, this.seenAt});
+      {this.mac = '', this.key = '', this.temperature, this.humidity, this.battery, this.seenAt});
 
   final String name;
   final String mac; // 'A4:C1:38:..' upper-case, empty if not configured
   final String key; // 32 hex chars; never persisted
   final double? temperature;
   final double? humidity;
+  final int? battery;
   final DateTime? seenAt;
 
   bool get configured => mac.isNotEmpty && key.isNotEmpty;
@@ -29,6 +30,7 @@ final class RoomSensor extends Equatable {
       key: c?.key ?? '',
       temperature: temperature,
       humidity: humidity,
+      battery: battery,
       seenAt: seenAt);
 
   RoomSensor merge(MiValues v) => RoomSensor(name,
@@ -36,19 +38,21 @@ final class RoomSensor extends Equatable {
       key: key,
       temperature: v.temperature ?? temperature,
       humidity: v.humidity ?? humidity,
+      battery: v.battery ?? battery,
       seenAt: DateTime.now());
 
   /// Persists readings only; the bindkey stays in the local config file.
   Map<String, Object?> toJson() =>
-      {'name': name, 't': temperature, 'h': humidity, 'seen': seenAt?.toIso8601String()};
+      {'name': name, 't': temperature, 'h': humidity, 'b': battery, 'seen': seenAt?.toIso8601String()};
 
   factory RoomSensor.fromJson(Map<String, dynamic> j) => RoomSensor(j['name'] as String,
       temperature: (j['t'] as num?)?.toDouble(),
       humidity: (j['h'] as num?)?.toDouble(),
+      battery: (j['b'] as num?)?.toInt(),
       seenAt: DateTime.tryParse(j['seen'] as String? ?? ''));
 
   @override
-  List<Object?> get props => [name, mac, key, temperature, humidity, seenAt];
+  List<Object?> get props => [name, mac, key, temperature, humidity, battery, seenAt];
 }
 
 /// Source of room sensor readings. Swap in e.g. a Home Assistant store later.
@@ -128,6 +132,6 @@ class SampleSensorStore implements SensorStore {
 
   @override
   Stream<MiValues> watch(Map<String, Uint8List> keys) => Stream.fromIterable([
-        for (final mac in keys.keys) (mac: mac, temperature: 22.4, humidity: 48.0),
+        for (final mac in keys.keys) (mac: mac, temperature: 22.4, humidity: 48.0, battery: 85),
       ]);
 }

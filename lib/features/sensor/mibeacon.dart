@@ -2,7 +2,7 @@ import 'dart:typed_data';
 
 import 'package:pointycastle/export.dart';
 
-typedef MiValues = ({String mac, double? temperature, double? humidity});
+typedef MiValues = ({String mac, double? temperature, double? humidity, int? battery});
 
 /// Parses MiBeacon service data (UUID 0xFE95) from a Xiaomi BLE thermometer.
 /// [keys] maps the sensor MAC ('A4:C1:38:..') to its 16-byte bindkey.
@@ -44,6 +44,7 @@ MiValues? parseMiBeacon(Uint8List d, Map<String, Uint8List> keys) {
   }
 
   double? t, h;
+  int? bat;
   for (var j = 0; j + 3 <= p.length;) {
     final type = p[j] | p[j + 1] << 8, len = p[j + 2];
     j += 3;
@@ -58,10 +59,12 @@ MiValues? parseMiBeacon(Uint8List d, Map<String, Uint8List> keys) {
       case 0x100D when len == 4:
         t = v.getInt16(0, Endian.little) / 10;
         h = v.getUint16(2, Endian.little) / 10;
+      case 0x100A when len == 1:
+        bat = v.getUint8(0);
     }
   }
-  if (t == null && h == null) return null;
-  return (mac: mac, temperature: t, humidity: h);
+  if (t == null && h == null && bat == null) return null;
+  return (mac: mac, temperature: t, humidity: h, battery: bat);
 }
 
 String _fmt(Iterable<int> b) =>

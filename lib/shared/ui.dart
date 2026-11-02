@@ -124,3 +124,48 @@ final Path blobPath = () {
   }
   return p..close();
 }();
+
+/// Battery indicator widget showing percentage with color-coded icon.
+class BatteryIndicator extends StatelessWidget {
+  const BatteryIndicator({super.key, required this.percentage, this.isCharging = false});
+  final int? percentage;
+  final bool isCharging;
+
+  @override
+  Widget build(BuildContext context) {
+    if (percentage == null) return const SizedBox.shrink();
+
+    final pct = percentage!.clamp(0, 100);
+    Color color;
+    IconData icon;
+
+    if (isCharging) {
+      color = const Color(0xFF4CAF50); // Green when charging
+      icon = Icons.battery_charging_full;
+    } else if (pct >= 80) {
+      color = const Color(0xFF4CAF50); // Green
+      icon = Icons.battery_full;
+    } else if (pct >= 50) {
+      color = const Color(0xFFFFC107); // Amber
+      icon = Icons.battery_6_bar;
+    } else if (pct >= 20) {
+      color = const Color(0xFFFF9800); // Orange
+      icon = Icons.battery_3_bar;
+    } else {
+      color = const Color(0xFFF44336); // Red
+      icon = Icons.battery_alert;
+    }
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 22, color: color),
+        const SizedBox(width: 6),
+        Text(
+          '$pct%',
+          style: flex(20, 600, color, em: -.02, tabular: true),
+        ),
+      ],
+    );
+  }
+}
