@@ -17,6 +17,8 @@ The design features a clean dark theme with purple/indigo accent colors, display
 - **Format Toggle**: Long-press the local card to switch between 24-hour and 12-hour format
 - **Weather Integration**: Displays weather information row at the bottom of each card
 - **Sensor Data**: Shows Bluetooth sensor data on the right side of the dashboard
+- **Battery Monitoring**: Displays tablet battery level and Xiaomi sensor battery average in top-right corner with color-coded icons
+- **Low Battery Alert**: Plays device default notification sound when tablet battery drops to 20% (while not charging)
 - **Responsive Design**: Layout adapts to 1280x800 default design, scaled to fit various screen sizes
 - **Platform Support**: Android and Windows builds available
 
@@ -28,6 +30,7 @@ The app uses the **BLoC (Business Logic Component)** pattern with **hydrated_blo
 - **WeatherBloc**: Fetches and manages weather data
 - **SensorBloc**: Manages Bluetooth sensor data
 - **DockBloc**: Handles the dock/bottom bar state
+- **DeviceBatteryBloc**: Monitors tablet battery level, triggers low-battery sound at 20%
 
 State management uses `Equatable` for easy state comparison and change detection. The app uses `HydratedStorage` to persist the hour24 format preference.
 
@@ -46,6 +49,10 @@ smart_clock/
 │   │   │   └── view/                  # UI components
 │   │   │       ├── clock_cards.dart   # Animated time cards (Local + India)
 │   │   │       └── ...                # Other UI widgets
+│   │   ├── device_battery/    # Device battery monitoring
+│   │   │   ├── device_battery_bloc.dart    # Battery BLoC with 20% alert
+│   │   │   ├── device_battery_event.dart   # Battery events
+│   │   │   └── device_battery_state.dart   # Battery state (level, charging)
 │   │   ├── dock/                # Bottom dock bar
 │   │   ├── sensor/              # Bluetooth sensor strip
 │   │   └── weather/             # Weather display
@@ -82,6 +89,36 @@ The default layout is designed for **1280x800** screens, using a `FittedBox` to 
 - Spacer (flex 20)
 - Right column: India card (flex 100)
 - Bottom: Dock bar, Sensor strip
+
+## Battery Monitoring (NEW)
+
+The app now displays battery information in the top-right corner of the screen:
+
+### Dual Battery Display
+
+| Indicator | Source | Description |
+|-----------|--------|-------------|
+| **Tablet Battery** | Android system | Current battery level of the tablet/device |
+| **Sensor Battery** | Xiaomi BLE sensors | Average battery level across all configured sensors |
+
+Both indicators show:
+- **Color-coded icons**: Green (≥80%), Amber (50-79%), Orange (20-49%), Red (<20%)
+- **Percentage text**: Exact battery percentage
+- **Charging icon**: Bolt icon when tablet is charging
+
+### Low Battery Notification
+
+When the tablet battery drops to **20% or below** (and the device is not charging):
+- Plays the **device's default notification sound** once
+- Automatically resets when battery rises above 20% or device starts charging
+- Implemented via Android platform channel using `RingtoneManager.getDefaultUri(TYPE_NOTIFICATION)`
+
+### Technical Implementation
+
+- **DeviceBatteryBloc**: BLoC pattern for state management (`lib/features/device_battery/`)
+- **Android Platform Channel**: `smart_clock/battery` method channel in `MainActivity.kt`
+- **BroadcastReceiver**: Listens for `ACTION_BATTERY_CHANGED` for real-time updates
+- **Sensor Integration**: Battery data parsed from MiBeacon `0x100A` type in `mibeacon.dart`
 
 ## Available Scripts
 
