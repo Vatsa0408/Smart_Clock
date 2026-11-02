@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hydrated_bloc/hydrated_bloc.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:smart_clock/features/clock/clock_bloc.dart';
+import 'package:smart_clock/features/device_battery/device_battery_bloc.dart';
 import 'package:smart_clock/features/dock/dock_bloc.dart';
 import 'package:smart_clock/features/dock/dock_store.dart';
 import 'package:smart_clock/features/sensor/sensor_bloc.dart';
@@ -36,6 +37,7 @@ void main() {
         BlocProvider(create: (_) => WeatherBloc(const SampleWeatherStore())..add(const WeatherRequested())),
         BlocProvider(create: (_) => SensorBloc(const SampleSensorStore())),
         BlocProvider(create: (_) => DockBloc(const DockStore())),
+        BlocProvider(create: (_) => DeviceBatteryBloc()),
       ],
       child: const MaterialApp(home: WallDisplay()),
     ));
