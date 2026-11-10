@@ -35,6 +35,7 @@ doc/api/
 .idea/
 .serena/
 .tokensave/
+graphify-out
 CLAUDE.md
 build_windows.log
 docs/

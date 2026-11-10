@@ -119,7 +119,7 @@ class LocalCard extends StatelessWidget {
               builder: (_, now) => Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const _Pill('Current location', Color(0xFFD0BCFF), Color(0xFF381E72)),
+                  const _Pill('Kempten · Germany', Color(0xFFD0BCFF), Color(0xFF381E72)),
                   Text(
                     '${_days[now.weekday - 1]} ${now.day} ${_months[now.month - 1]}',
                     style: flex(26, 500, const Color(0xFFEADDFF)),
@@ -169,7 +169,7 @@ class _SecondsBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) => BlocSelector<ClockBloc, ClockState, int>(
         selector: (s) => s.now.second,
-        builder: (_, sec) => Container(
+        builder: (ctx, sec) => Container(
           height: 8,
           decoration: BoxDecoration(
             color: const Color(0xFF6A4FA8),
@@ -179,7 +179,11 @@ class _SecondsBar extends StatelessWidget {
           alignment: Alignment.centerLeft,
           child: TweenAnimationBuilder<double>(
             tween: Tween(end: (sec + 1) / 60),
-            duration: sec == 0 ? Duration.zero : const Duration(seconds: 1),
+            // Zero duration also under reduced motion: implicit animations stall
+            // there (Android "remove animations"/power saver, night mode).
+            duration: sec == 0 || MediaQuery.disableAnimationsOf(ctx)
+                ? Duration.zero
+                : const Duration(seconds: 1),
             builder: (_, f, _) => FractionallySizedBox(
               widthFactor: f,
               child: DecoratedBox(
