@@ -8,6 +8,7 @@ import 'package:hydrated_bloc/hydrated_bloc.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:smart_clock/features/clock/clock_bloc.dart';
 import 'package:smart_clock/features/device_battery/device_battery_bloc.dart';
+import 'package:smart_clock/features/device_battery/device_battery_store.dart';
 import 'package:smart_clock/features/display/display_bloc.dart';
 import 'package:smart_clock/features/display/display_store.dart';
 import 'package:smart_clock/features/dock/dock_bloc.dart';
@@ -40,7 +41,7 @@ void main() {
         BlocProvider(create: (_) => SensorBloc(const SampleSensorStore())),
         BlocProvider(create: (_) => DockBloc(const DockStore())),
         BlocProvider(create: (_) => DisplayBloc(const DisplayStore())),
-        BlocProvider(create: (_) => DeviceBatteryBloc()),
+        BlocProvider(create: (_) => DeviceBatteryBloc(DeviceBatteryStore())),
       ],
       child: const MaterialApp(home: WallDisplay()),
     ));

@@ -10,8 +10,7 @@ import 'package:path_provider/path_provider.dart';
 import 'features/clock/clock_bloc.dart';
 import 'features/clock/view/clock_cards.dart';
 import 'features/device_battery/device_battery_bloc.dart';
-import 'features/device_battery/device_battery_event.dart';
-import 'features/device_battery/device_battery_state.dart';
+import 'features/device_battery/device_battery_store.dart';
 import 'features/diagnostics/diagnostics_bloc.dart';
 import 'features/diagnostics/diagnostics_store.dart';
 import 'features/display/display_bloc.dart';
@@ -66,7 +65,7 @@ class SmartClockApp extends StatelessWidget {
         BlocProvider(create: (_) => SensorBloc(const BleSensorStore())..add(const SensorRequested())),
         BlocProvider(create: (_) => DockBloc(const DockStore())),
         BlocProvider(create: (_) => DisplayBloc(const DisplayStore())),
-        BlocProvider(create: (_) => DeviceBatteryBloc()..add(const DeviceBatteryRequested())),
+        BlocProvider(create: (_) => DeviceBatteryBloc(DeviceBatteryStore())..add(const DeviceBatteryRequested())),
       ],
       child: MaterialApp(
         title: 'Smart Clock',

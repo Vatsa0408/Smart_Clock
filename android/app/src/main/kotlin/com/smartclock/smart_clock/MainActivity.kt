@@ -16,6 +16,7 @@ import io.flutter.plugin.common.MethodChannel
 class MainActivity : FlutterActivity() {
     private val CHANNEL = "smart_clock/battery"
     private var batteryReceiver: BroadcastReceiver? = null
+    private val batteryChannel by lazy { MethodChannel(flutterEngine!!.dartExecutor.binaryMessenger, CHANNEL) }
 
     override fun onCreate(savedInstanceState: android.os.Bundle?) {
         super.onCreate(savedInstanceState)
@@ -24,17 +25,12 @@ class MainActivity : FlutterActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler { call, result ->
+        batteryChannel.setMethodCallHandler { call, result ->
             when (call.method) {
-                "getBatteryLevel" -> {
-                    result.success(getBatteryLevel())
-                }
-                "isCharging" -> {
-                    result.success(isCharging())
-                }
-                "playLowBatterySound" -> {
-                    playLowBatterySound()
-                    result.success(true)
+                "getBattery" -> result.success(batteryArgs(registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))))
+                "playSound" -> {
+                    playSound(call.arguments as? String ?: "default")
+                    result.success(null)
                 }
                 else -> result.notImplemented()
             }
@@ -52,38 +48,22 @@ class MainActivity : FlutterActivity() {
         registerBatteryReceiver()
     }
 
-    private fun getBatteryLevel(): Int {
-        val batteryManager = getSystemService(BATTERY_SERVICE) as BatteryManager
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
-        } else {
-            val intent = registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
-            intent?.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) ?: -1
-        }
-    }
-
-    private fun isCharging(): Boolean {
-        val batteryManager = getSystemService(BATTERY_SERVICE) as BatteryManager
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_STATUS) == BatteryManager.BATTERY_STATUS_CHARGING
-        } else {
-            val intent = registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
-            val status = intent?.getIntExtra(BatteryManager.EXTRA_STATUS, -1) ?: -1
-            status == BatteryManager.BATTERY_STATUS_CHARGING || status == BatteryManager.BATTERY_STATUS_FULL
-        }
+    private fun batteryArgs(i: Intent?): Map<String, Any?> {
+        val level = i?.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) ?: -1
+        val scale = i?.getIntExtra(BatteryManager.EXTRA_SCALE, 100) ?: 100
+        val temp = i?.getIntExtra(BatteryManager.EXTRA_TEMPERATURE, Int.MIN_VALUE) ?: Int.MIN_VALUE
+        return mapOf(
+            "level" to if (level >= 0 && scale > 0) level * 100 / scale else null,
+            "isCharging" to (i?.getIntExtra(BatteryManager.EXTRA_STATUS, -1) == BatteryManager.BATTERY_STATUS_CHARGING),
+            "tempC" to if (temp == Int.MIN_VALUE) null else temp / 10.0,
+            "overheat" to (i?.getIntExtra(BatteryManager.EXTRA_HEALTH, 0) == BatteryManager.BATTERY_HEALTH_OVERHEAT),
+        )
     }
 
     private fun registerBatteryReceiver() {
         batteryReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
-                val level = getBatteryLevel()
-                val charging = isCharging()
-                val args = mapOf("level" to level, "isCharging" to charging)
-                val binaryMessenger = flutterEngine?.dartExecutor?.binaryMessenger
-                if (binaryMessenger != null) {
-                    val channel = MethodChannel(binaryMessenger, CHANNEL)
-                    channel.invokeMethod("onBatteryChanged", args)
-                }
+                batteryChannel.invokeMethod("onBatteryChanged", batteryArgs(intent))
             }
         }
         val filter = IntentFilter(Intent.ACTION_BATTERY_CHANGED)
@@ -100,7 +80,7 @@ class MainActivity : FlutterActivity() {
         super.onDestroy()
     }
 
-    private fun playLowBatterySound() {
+    private fun playSound(type: String) {
         try {
             val notificationSound: Uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
             val audioAttributes = AudioAttributes.Builder()
@@ -111,7 +91,7 @@ class MainActivity : FlutterActivity() {
             ringtone.setAudioAttributes(audioAttributes)
             ringtone.play()
         } catch (e: Exception) {
-            // Ignore errors playing sound
+            // Ignore errors playing sound (every type plays the notification tone for now)
         }
     }
 }
