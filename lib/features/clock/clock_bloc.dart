@@ -26,6 +26,10 @@ class ClockBloc extends HydratedBloc<ClockEvent, ClockState> {
     return super.close();
   }
 
+  // Fixed so persisted state survives obfuscated release builds.
+  @override
+  String get storagePrefix => 'ClockBloc';
+
   @override
   ClockState? fromJson(Map<String, dynamic> json) =>
       ClockState(now: DateTime.now(), hour24: json['hour24'] as bool? ?? true);

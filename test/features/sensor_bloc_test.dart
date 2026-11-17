@@ -22,6 +22,10 @@ void main() {
     HydratedBloc.storage = storage;
   });
 
+  test('storagePrefix is obfuscation-proof', () {
+    expect(SensorBloc(const SampleSensorStore()).storagePrefix, 'SensorBloc');
+  });
+
   blocTest<SensorBloc, SensorState>(
     'configured rooms receive readings',
     build: () => SensorBloc(const SampleSensorStore()),

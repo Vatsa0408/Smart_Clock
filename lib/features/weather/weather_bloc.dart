@@ -30,6 +30,10 @@ class WeatherBloc extends HydratedBloc<WeatherEvent, WeatherState> {
     return super.close();
   }
 
+  // Fixed so persisted state survives obfuscated release builds.
+  @override
+  String get storagePrefix => 'WeatherBloc';
+
   @override
   WeatherState? fromJson(Map<String, dynamic> json) {
     try {

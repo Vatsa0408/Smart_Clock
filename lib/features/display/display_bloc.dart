@@ -22,6 +22,10 @@ class DisplayBloc extends HydratedBloc<DisplayEvent, DisplayState> {
 
   final DisplayStore _store;
 
+  // Fixed so persisted state survives obfuscated release builds.
+  @override
+  String get storagePrefix => 'DisplayBloc';
+
   // Only the schedule persists; `night` is recomputed on the next minute tick.
   @override
   DisplayState? fromJson(Map<String, dynamic> json) => DisplayState(

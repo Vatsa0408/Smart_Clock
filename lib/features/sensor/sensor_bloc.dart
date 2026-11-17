@@ -33,6 +33,10 @@ class SensorBloc extends HydratedBloc<SensorEvent, SensorState> {
     );
   }
 
+  // Fixed so persisted state survives obfuscated release builds.
+  @override
+  String get storagePrefix => 'SensorBloc';
+
   @override
   SensorState? fromJson(Map<String, dynamic> json) => SensorState(rooms: [
         for (final r in json['rooms'] as List)
