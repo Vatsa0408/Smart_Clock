@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -11,6 +12,8 @@ import 'features/clock/view/clock_cards.dart';
 import 'features/device_battery/device_battery_bloc.dart';
 import 'features/device_battery/device_battery_event.dart';
 import 'features/device_battery/device_battery_state.dart';
+import 'features/diagnostics/diagnostics_bloc.dart';
+import 'features/diagnostics/diagnostics_store.dart';
 import 'features/display/display_bloc.dart';
 import 'features/display/display_store.dart';
 import 'features/dock/dock_bloc.dart';
@@ -25,22 +28,39 @@ import 'shared/ui.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  final support = await getApplicationSupportDirectory();
+  final log = DiagnosticsStore(support);
+  log.write('I', 'app start'); // counting these in the soak shows silent restarts
+  FlutterError.onError = (d) {
+    if (kDebugMode) FlutterError.presentError(d);
+    log.write('E', d.exceptionAsString(), d.stack);
+  };
+  WidgetsBinding.instance.platformDispatcher.onError = (e, s) {
+    log.write('E', e, s);
+    return true;
+  };
+  final printer = debugPrint;
+  debugPrint = (m, {wrapWidth}) {
+    printer(m, wrapWidth: wrapWidth);
+    if (m != null) log.write('D', m);
+  };
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
   HydratedBloc.storage = await HydratedStorage.build(
-    storageDirectory: HydratedStorageDirectory(
-      (await getApplicationSupportDirectory()).path,
-    ),
+    storageDirectory: HydratedStorageDirectory(support.path),
   );
-  runApp(const SmartClockApp());
+  runApp(SmartClockApp(log: log));
 }
 
 class SmartClockApp extends StatelessWidget {
-  const SmartClockApp({super.key});
+  const SmartClockApp({super.key, required this.log});
+
+  final DiagnosticsStore log;
 
   @override
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
+        BlocProvider(create: (_) => DiagnosticsBloc(log)),
         BlocProvider(create: (_) => ClockBloc()),
         BlocProvider(create: (_) => WeatherBloc(const OpenMeteoWeatherStore())..add(const WeatherRequested())),
         BlocProvider(create: (_) => SensorBloc(const BleSensorStore())..add(const SensorRequested())),
