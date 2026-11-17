@@ -10,14 +10,18 @@ class SettingsEntry extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => RawGestureDetector(
-        behavior: HitTestBehavior.opaque,
-        gestures: {
-          LongPressGestureRecognizer: GestureRecognizerFactoryWithHandlers<LongPressGestureRecognizer>(
-            () => LongPressGestureRecognizer(duration: const Duration(seconds: 2)),
-            (r) => r.onLongPress = () => Navigator.of(context)
-                .push(MaterialPageRoute<void>(builder: (_) => const SettingsPage())),
+    behavior: HitTestBehavior.opaque,
+    gestures: {
+      LongPressGestureRecognizer:
+          GestureRecognizerFactoryWithHandlers<LongPressGestureRecognizer>(
+            () => LongPressGestureRecognizer(
+              duration: const Duration(seconds: 2),
+            ),
+            (r) => r.onLongPress = () => Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => const SettingsPage()),
+            ),
           ),
-        },
-        child: const SizedBox(width: 200, height: 56),
-      );
+    },
+    child: const SizedBox(width: 200, height: 56),
+  );
 }

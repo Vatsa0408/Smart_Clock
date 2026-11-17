@@ -42,7 +42,9 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<int?> _pick(BuildContext context, int current) async {
     final t = await showTimePicker(
-        context: context, initialTime: TimeOfDay(hour: current ~/ 60, minute: current % 60));
+      context: context,
+      initialTime: TimeOfDay(hour: current ~/ 60, minute: current % 60),
+    );
     return t == null ? null : t.hour * 60 + t.minute;
   }
 
@@ -62,7 +64,9 @@ class _SettingsPageState extends State<SettingsPage> {
                 trailing: Text(_hm(s.nightStartMin)),
                 onTap: () async {
                   final m = await _pick(context, s.nightStartMin);
-                  if (m != null) bloc.add(SettingsNightScheduleChanged(startMin: m));
+                  if (m != null) {
+                    bloc.add(SettingsNightScheduleChanged(startMin: m));
+                  }
                 },
               ),
               ListTile(
@@ -70,16 +74,21 @@ class _SettingsPageState extends State<SettingsPage> {
                 trailing: Text(_hm(s.nightEndMin)),
                 onTap: () async {
                   final m = await _pick(context, s.nightEndMin);
-                  if (m != null) bloc.add(SettingsNightScheduleChanged(endMin: m));
+                  if (m != null) {
+                    bloc.add(SettingsNightScheduleChanged(endMin: m));
+                  }
                 },
               ),
               ListTile(
-                title: Text('Night brightness ${(s.nightBrightness * 100).round()}%'),
+                title: Text(
+                  'Night brightness ${(s.nightBrightness * 100).round()}%',
+                ),
                 subtitle: Slider(
                   min: 0.02,
                   max: 0.5,
                   value: s.nightBrightness.clamp(0.02, 0.5),
-                  onChanged: (v) => bloc.add(SettingsNightScheduleChanged(brightness: v)),
+                  onChanged: (v) =>
+                      bloc.add(SettingsNightScheduleChanged(brightness: v)),
                 ),
               ),
               const _Header('Battery'),
@@ -90,7 +99,18 @@ class _SettingsPageState extends State<SettingsPage> {
                   max: 50,
                   divisions: 45,
                   value: s.lowBatteryPct.toDouble().clamp(5, 50),
-                  onChanged: (v) => bloc.add(SettingsLowBatteryChanged(v.round())),
+                  onChanged: (v) =>
+                      bloc.add(SettingsLowBatteryChanged(v.round())),
+                ),
+              ),
+              ListTile(
+                title: Text('Overheat guard at ${s.overheatC.round()} °C'),
+                subtitle: Slider(
+                  min: 38,
+                  max: 55,
+                  divisions: 17,
+                  value: s.overheatC.clamp(38.0, 55.0),
+                  onChanged: (v) => bloc.add(SettingsOverheatChanged(v)),
                 ),
               ),
               if (Platform.isAndroid) ...[
@@ -109,18 +129,25 @@ class _SettingsPageState extends State<SettingsPage> {
                 builder: (context, d) => ExpansionTile(
                   title: const Text('Log'),
                   onExpansionChanged: (open) {
-                    if (open) context.read<DiagnosticsBloc>().add(const DiagnosticsOpened());
+                    if (open) {
+                      context.read<DiagnosticsBloc>().add(const DiagnosticsOpened());
+                    }
                   },
                   children: [
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: SelectableText(
                         d.lines.isEmpty ? '(empty)' : d.lines.join('\n'),
-                        style: const TextStyle(fontFamily: 'monospace', fontSize: 11),
+                        style: const TextStyle(
+                          fontFamily: 'monospace',
+                          fontSize: 11,
+                        ),
                       ),
                     ),
                     TextButton(
-                      onPressed: () => context.read<DiagnosticsBloc>().add(const DiagnosticsCleared()),
+                      onPressed: () => context.read<DiagnosticsBloc>().add(
+                        const DiagnosticsCleared(),
+                      ),
                       child: const Text('Clear log'),
                     ),
                   ],
@@ -140,7 +167,10 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.fromLTRB(16, 20, 16, 4),
-        child: Text(text, style: TextStyle(color: Theme.of(context).colorScheme.primary)),
-      );
+    padding: const EdgeInsets.fromLTRB(16, 20, 16, 4),
+    child: Text(
+      text,
+      style: TextStyle(color: Theme.of(context).colorScheme.primary),
+    ),
+  );
 }

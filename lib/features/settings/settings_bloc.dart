@@ -8,12 +8,21 @@ part 'settings_state.dart';
 
 class SettingsBloc extends HydratedBloc<SettingsEvent, SettingsState> {
   SettingsBloc(this._store) : super(const SettingsState()) {
-    on<SettingsNightScheduleChanged>((e, emit) => emit(state.copyWith(
+    on<SettingsNightScheduleChanged>(
+      (e, emit) => emit(
+        state.copyWith(
           nightStartMin: e.startMin,
           nightEndMin: e.endMin,
           nightBrightness: e.brightness?.clamp(0.02, 0.5),
-        )));
-    on<SettingsLowBatteryChanged>((e, emit) => emit(state.copyWith(lowBatteryPct: e.pct.clamp(5, 50))));
+        ),
+      ),
+    );
+    on<SettingsLowBatteryChanged>(
+      (e, emit) => emit(state.copyWith(lowBatteryPct: e.pct.clamp(5, 50))),
+    );
+    on<SettingsOverheatChanged>(
+      (e, emit) => emit(state.copyWith(overheatC: e.c.clamp(38.0, 55.0))),
+    );
     on<SettingsHomeAppPickerOpened>((e, _) => _store.openHomeSettings());
     on<SettingsAndroidSettingsOpened>((e, _) => _store.openAndroidSettings());
   }
@@ -24,7 +33,8 @@ class SettingsBloc extends HydratedBloc<SettingsEvent, SettingsState> {
   String get storagePrefix => 'SettingsBloc';
 
   @override
-  SettingsState? fromJson(Map<String, dynamic> json) => SettingsState.fromJson(json);
+  SettingsState? fromJson(Map<String, dynamic> json) =>
+      SettingsState.fromJson(json);
 
   @override
   Map<String, dynamic>? toJson(SettingsState state) => state.toJson();

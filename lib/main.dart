@@ -96,7 +96,7 @@ class SmartClockApp extends StatelessWidget {
           create: (c) {
             final s = c.read<SettingsBloc>().state;
             return DeviceBatteryBloc(DeviceBatteryStore())
-              ..add(DeviceBatteryThresholdsSet(s.lowBatteryPct, 45))
+              ..add(DeviceBatteryThresholdsSet(s.lowBatteryPct, s.overheatC))
               ..add(const DeviceBatteryRequested());
           },
         ),
@@ -122,10 +122,14 @@ class SmartClockApp extends StatelessWidget {
             ),
           ),
           BlocListener<SettingsBloc, SettingsState>(
-            listenWhen: (a, b) => a.lowBatteryPct != b.lowBatteryPct,
+            listenWhen: (a, b) => a.lowBatteryPct != b.lowBatteryPct || a.overheatC != b.overheatC,
             listener: (c, s) => c.read<DeviceBatteryBloc>().add(
-              DeviceBatteryThresholdsSet(s.lowBatteryPct, 45),
+              DeviceBatteryThresholdsSet(s.lowBatteryPct, s.overheatC),
             ),
+          ),
+          BlocListener<DeviceBatteryBloc, DeviceBatteryState>(
+            listenWhen: (a, b) => a.overheat != b.overheat,
+            listener: (c, s) => c.read<DisplayBloc>().add(DisplayOverheatChanged(s.overheat)),
           ),
           BlocListener<DisplayBloc, DisplayState>(
             listenWhen: (a, b) => a.night != b.night,
@@ -254,7 +258,9 @@ class WallDisplay extends StatelessWidget {
   }
 }
 
-/// Tablet battery and averaged sensor battery.
+const _hot = Color(0xFFF44336);
+
+/// Tablet battery (and overheat badge) and averaged sensor battery.
 class _BatteryRow extends StatelessWidget {
   const _BatteryRow();
 
@@ -264,13 +270,18 @@ class _BatteryRow extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         BlocBuilder<DeviceBatteryBloc, DeviceBatteryState>(
-          builder: (_, state) {
-            if (state.level == null) return const SizedBox.shrink();
-            return BatteryIndicator(
-              percentage: state.level!,
-              isCharging: state.isCharging,
-            );
-          },
+          builder: (_, state) => Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (state.overheat) ...[
+                const Icon(Icons.thermostat, color: _hot, size: 22),
+                Text('${state.tempC?.round() ?? '!'}°C', style: flex(20, 600, _hot)),
+                const SizedBox(width: 16),
+              ],
+              if (state.level != null)
+                BatteryIndicator(percentage: state.level!, isCharging: state.isCharging),
+            ],
+          ),
         ),
         const SizedBox(width: 16),
         // Sensor battery (average of all sensors)

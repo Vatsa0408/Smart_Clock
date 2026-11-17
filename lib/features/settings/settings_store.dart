@@ -12,7 +12,10 @@ class SettingsStore {
 
   Future<void> _intent(String action) async {
     if (!Platform.isAndroid) return;
-    await AndroidIntent(action: action, flags: const [0x10000000]) // FLAG_ACTIVITY_NEW_TASK
+    await AndroidIntent(
+          action: action,
+          flags: const [0x10000000],
+        ) // FLAG_ACTIVITY_NEW_TASK
         .launch()
         .catchError((_) {});
   }
