@@ -1,4 +1,3 @@
-import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -223,27 +222,14 @@ class WallDisplay extends StatelessWidget {
                       child: Padding(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 32,
-                      vertical: 28,
+                      vertical: 18,
                     ),
                     child: Column(
                       children: [
-                        // Top row: HOME-launcher escape hatch on the left, battery indicators on the right
+                        // Top row: App settings button, now playing, battery indicators
                         Row(
                           children: [
-                            if (Platform.isAndroid)
-                              Builder(
-                                builder: (context) => IconButton(
-                                  tooltip: 'Android home settings',
-                                  icon: const Icon(
-                                    Icons.settings_outlined,
-                                    size: 28,
-                                    color: Color(0x66E6E0E9),
-                                  ),
-                                  onPressed: () => context
-                                      .read<SettingsBloc>()
-                                      .add(const SettingsHomeAppPickerOpened()),
-                                ),
-                              ),
+                            const SettingsEntry(),
                             const SizedBox(width: 12),
                             const Expanded(child: NowPlayingBar()),
                             const _BatteryRow(),
@@ -267,7 +253,6 @@ class WallDisplay extends StatelessWidget {
                       ),
                     ),
                   ),
-                  const Positioned(top: 28, right: 32, child: SettingsEntry()),
                 ],
               ),
             ),

@@ -1,27 +1,32 @@
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
+import '../../../shared/ui.dart';
 import 'settings_page.dart';
 
-/// Hidden entry: an invisible 200x56 hit area; a 2 s long-press opens Settings.
-/// Overlay it in a Stack so it does not depend on (or take space from) the battery row.
+/// Visible "App settings" pill (gear + label) that opens the Settings screen.
 class SettingsEntry extends StatelessWidget {
   const SettingsEntry({super.key});
 
   @override
-  Widget build(BuildContext context) => RawGestureDetector(
-    behavior: HitTestBehavior.opaque,
-    gestures: {
-      LongPressGestureRecognizer:
-          GestureRecognizerFactoryWithHandlers<LongPressGestureRecognizer>(
-            () => LongPressGestureRecognizer(
-              duration: const Duration(seconds: 2),
-            ),
-            (r) => r.onLongPress = () => Navigator.of(context).push(
-              MaterialPageRoute<void>(builder: (_) => const SettingsPage()),
-            ),
-          ),
-    },
-    child: const SizedBox(width: 200, height: 56),
+  Widget build(BuildContext context) => Material(
+    color: const Color(0xFF2B2930),
+    shape: const StadiumBorder(),
+    child: InkWell(
+      customBorder: const StadiumBorder(),
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute<void>(builder: (_) => const SettingsPage()),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.settings_outlined, size: 22, color: Color(0xFFD0BCFF)),
+            const SizedBox(width: 10),
+            Text('App settings', style: flex(18, 500, const Color(0xFFE6E0E9))),
+          ],
+        ),
+      ),
+    ),
   );
 }

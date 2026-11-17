@@ -59,13 +59,8 @@ void main() {
     expect(find.text('Bangalore · India'), findsOneWidget);
     expect(find.text('YouTube Music'), findsOneWidget);
     expect(tester.takeException(), isNull);
-    // A short press on the top-right corner does nothing; a 2 s hold opens Settings.
-    await tester.tapAt(const Offset(1200, 56));
-    await tester.pump(const Duration(milliseconds: 500));
-    expect(find.byType(SettingsPage), findsNothing);
-    final g = await tester.startGesture(const Offset(1200, 56));
-    await tester.pump(const Duration(milliseconds: 2100));
-    await g.up();
+    await tester.tap(find.text('App settings'));
+    await tester.pump(const Duration(seconds: 1));
     await tester.pump(const Duration(seconds: 1));
     expect(find.byType(SettingsPage), findsOneWidget);
     await tester.pumpWidget(const SizedBox());
