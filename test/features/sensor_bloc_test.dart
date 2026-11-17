@@ -1,7 +1,10 @@
+import 'dart:typed_data';
+
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hydrated_bloc/hydrated_bloc.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:smart_clock/features/sensor/mibeacon.dart';
 import 'package:smart_clock/features/sensor/sensor_bloc.dart';
 import 'package:smart_clock/features/sensor/sensor_store.dart';
 
@@ -12,6 +15,15 @@ class _EmptyStore extends SampleSensorStore {
   const _EmptyStore();
   @override
   Future<Map<String, SensorConfig>> loadConfig() async => {};
+}
+
+/// First scan ends at once (Bluetooth off); the second one works.
+class _FlakyStore extends SampleSensorStore {
+  _FlakyStore();
+  int watches = 0;
+  @override
+  Stream<MiValues> watch(Map<String, Uint8List> keys) =>
+      ++watches == 1 ? const Stream.empty() : super.watch(keys);
 }
 
 void main() {
@@ -43,4 +55,13 @@ void main() {
     act: (b) => b.add(const SensorRequested()),
     verify: (b) => expect(b.state.rooms.every((r) => r.temperature == null), isTrue),
   );
+
+  test('scan that ends is restarted after the backoff', () async {
+    final store = _FlakyStore();
+    final b = SensorBloc(store, retryBase: const Duration(milliseconds: 10))..add(const SensorRequested());
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+    expect(store.watches, greaterThanOrEqualTo(2));
+    expect(b.state.rooms.first.temperature, 22.4);
+    await b.close();
+  });
 }

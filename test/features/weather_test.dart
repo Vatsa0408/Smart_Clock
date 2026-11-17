@@ -23,4 +23,30 @@ void main() {
     expect(b.storagePrefix, 'WeatherBloc');
     await b.close();
   });
+
+  test('a failed refresh retries on its own and recovers', () async {
+    final storage = _MockStorage();
+    when(() => storage.read(any())).thenReturn(null);
+    when(() => storage.write(any(), any<dynamic>())).thenAnswer((_) async {});
+    HydratedBloc.storage = storage;
+    final store = _FlakyStore(failures: 2);
+    final b = WeatherBloc(store, retryBase: const Duration(milliseconds: 10))..add(const WeatherRequested());
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+    expect(store.calls, 3);
+    expect(b.state.local, isNotNull);
+    expect(b.state.error, isFalse);
+    await b.close();
+  });
+}
+
+class _FlakyStore extends SampleWeatherStore {
+  _FlakyStore({required this.failures});
+  int failures;
+  int calls = 0;
+  @override
+  Future<Weather> local() async {
+    calls++;
+    if (failures-- > 0) throw const SocketException('offline');
+    return super.local();
+  }
 }

@@ -112,10 +112,12 @@ class BleSensorStore implements SensorStore {
             await UniversalBle.startScan();
           } catch (e) {
             c.addError(e);
+            await c.close(); // ends the stream so SensorBloc retries
           }
         });
       } catch (e) {
         c.addError(e);
+        await c.close(); // ends the stream so SensorBloc retries
       }
     };
     c.onCancel = () async {
