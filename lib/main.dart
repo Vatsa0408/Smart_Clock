@@ -19,6 +19,9 @@ import 'features/dock/dock_bloc.dart';
 import 'features/dock/dock_store.dart';
 import 'features/dock/view/dock_bar.dart';
 import 'features/sensor/sensor_bloc.dart';
+import 'features/settings/settings_bloc.dart';
+import 'features/settings/settings_store.dart';
+import 'features/settings/view/settings_entry.dart';
 import 'features/sensor/sensor_store.dart';
 import 'features/sensor/view/sensor_strip.dart';
 import 'features/weather/weather_bloc.dart';
@@ -29,7 +32,10 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final support = await getApplicationSupportDirectory();
   final log = DiagnosticsStore(support);
-  log.write('I', 'app start'); // counting these in the soak shows silent restarts
+  log.write(
+    'I',
+    'app start',
+  ); // counting these in the soak shows silent restarts
   FlutterError.onError = (d) {
     if (kDebugMode) FlutterError.presentError(d);
     log.write('E', d.exceptionAsString(), d.stack);
@@ -59,38 +65,100 @@ class SmartClockApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
+        BlocProvider(
+          create: (_) => SettingsBloc(const SettingsStore()),
+        ), // first: others seed from it
         BlocProvider(create: (_) => DiagnosticsBloc(log)),
         BlocProvider(create: (_) => ClockBloc()),
-        BlocProvider(create: (_) => WeatherBloc(const OpenMeteoWeatherStore())..add(const WeatherRequested())),
-        BlocProvider(create: (_) => SensorBloc(const BleSensorStore())..add(const SensorRequested())),
-        BlocProvider(create: (_) => DockBloc(const DockStore())),
-        BlocProvider(create: (_) => DisplayBloc(const DisplayStore())),
-        BlocProvider(create: (_) => DeviceBatteryBloc(DeviceBatteryStore())..add(const DeviceBatteryRequested())),
-      ],
-      child: MaterialApp(
-        title: 'Smart Clock',
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          useMaterial3: true,
-          brightness: Brightness.dark,
-          scaffoldBackgroundColor: const Color(0xFF141218),
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: const Color(0xFFD0BCFF),
-            brightness: Brightness.dark,
-            primary: const Color(0xFFD0BCFF),
-            secondary: const Color(0xFFEFB8C8),
-            tertiary: const Color(0xFFB4E5BC),
-            surface: const Color(0xFF1A181F),
-            surfaceContainerHighest: const Color(0xFF2B2930),
-          ),
-          fontFamily: 'RobotoFlex',
-          textTheme: Typography.material2021().white.apply(
-                fontFamily: 'RobotoFlex',
-                bodyColor: const Color(0xFFE6E0E9),
-                displayColor: const Color(0xFFE6E0E9),
-              ),
+        BlocProvider(
+          create: (_) =>
+              WeatherBloc(const OpenMeteoWeatherStore())
+                ..add(const WeatherRequested()),
         ),
-        home: const WallDisplay(),
+        BlocProvider(
+          create: (_) =>
+              SensorBloc(const BleSensorStore())..add(const SensorRequested()),
+        ),
+        BlocProvider(create: (_) => DockBloc(const DockStore())),
+        BlocProvider(
+          create: (c) {
+            final s = c.read<SettingsBloc>().state;
+            return DisplayBloc(const DisplayStore())..add(
+              DisplayScheduleSet(
+                s.nightStartMin,
+                s.nightEndMin,
+                s.nightBrightness,
+              ),
+            );
+          },
+        ),
+        BlocProvider(
+          create: (c) {
+            final s = c.read<SettingsBloc>().state;
+            return DeviceBatteryBloc(DeviceBatteryStore())
+              ..add(DeviceBatteryThresholdsSet(s.lowBatteryPct, 45))
+              ..add(const DeviceBatteryRequested());
+          },
+        ),
+      ],
+      child: MultiBlocListener(
+        listeners: [
+          BlocListener<ClockBloc, ClockState>(
+            listenWhen: (a, b) => a.now.minute != b.now.minute,
+            listener: (c, s) =>
+                c.read<DisplayBloc>().add(DisplayMinuteTicked(s.now)),
+          ),
+          BlocListener<SettingsBloc, SettingsState>(
+            listenWhen: (a, b) =>
+                a.nightStartMin != b.nightStartMin ||
+                a.nightEndMin != b.nightEndMin ||
+                a.nightBrightness != b.nightBrightness,
+            listener: (c, s) => c.read<DisplayBloc>().add(
+              DisplayScheduleSet(
+                s.nightStartMin,
+                s.nightEndMin,
+                s.nightBrightness,
+              ),
+            ),
+          ),
+          BlocListener<SettingsBloc, SettingsState>(
+            listenWhen: (a, b) => a.lowBatteryPct != b.lowBatteryPct,
+            listener: (c, s) => c.read<DeviceBatteryBloc>().add(
+              DeviceBatteryThresholdsSet(s.lowBatteryPct, 45),
+            ),
+          ),
+          BlocListener<DisplayBloc, DisplayState>(
+            listenWhen: (a, b) => a.night != b.night,
+            listener: (c, s) => c.read<DeviceBatteryBloc>().add(
+              DeviceBatteryNightChanged(s.night),
+            ),
+          ),
+        ],
+        child: MaterialApp(
+          title: 'Smart Clock',
+          debugShowCheckedModeBanner: false,
+          theme: ThemeData(
+            useMaterial3: true,
+            brightness: Brightness.dark,
+            scaffoldBackgroundColor: const Color(0xFF141218),
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: const Color(0xFFD0BCFF),
+              brightness: Brightness.dark,
+              primary: const Color(0xFFD0BCFF),
+              secondary: const Color(0xFFEFB8C8),
+              tertiary: const Color(0xFFB4E5BC),
+              surface: const Color(0xFF1A181F),
+              surfaceContainerHighest: const Color(0xFF2B2930),
+            ),
+            fontFamily: 'RobotoFlex',
+            textTheme: Typography.material2021().white.apply(
+              fontFamily: 'RobotoFlex',
+              bodyColor: const Color(0xFFE6E0E9),
+              displayColor: const Color(0xFFE6E0E9),
+            ),
+          ),
+          home: const WallDisplay(),
+        ),
       ),
     );
   }
@@ -103,21 +171,18 @@ class WallDisplay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final mq = MediaQuery.of(context);
-    return BlocListener<ClockBloc, ClockState>(
-      listenWhen: (a, b) => a.now.minute != b.now.minute,
-      listener: (c, s) => c.read<DisplayBloc>().add(DisplayMinuteTicked(s.now)),
-      child: BlocSelector<DisplayBloc, DisplayState, bool>(
-        selector: (s) => s.night,
-        builder: (context, night) => MediaQuery(
-          // Night: freeze the Loop animations (reuses the reduced-motion path).
-          data: mq.copyWith(disableAnimations: mq.disableAnimations || night),
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              _wall(),
-              if (night) const IgnorePointer(child: ColoredBox(color: Color(0x80000000))),
-            ],
-          ),
+    return BlocSelector<DisplayBloc, DisplayState, bool>(
+      selector: (s) => s.dim,
+      builder: (context, dim) => MediaQuery(
+        // Night/overheat: freeze the Loop animations (reuses the reduced-motion path).
+        data: mq.copyWith(disableAnimations: mq.disableAnimations || dim),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            _wall(),
+            if (dim)
+              const IgnorePointer(child: ColoredBox(color: Color(0x80000000))),
+          ],
         ),
       ),
     );
@@ -132,72 +197,103 @@ class WallDisplay extends StatelessWidget {
             child: SizedBox(
               width: 1280,
               height: 800,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 28),
-                child: Column(
-                  children: [
-                    // Top row: HOME-launcher escape hatch on the left, battery indicators on the right
-                    Row(
+              child: Stack(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 32,
+                      vertical: 28,
+                    ),
+                    child: Column(
                       children: [
-                        if (Platform.isAndroid)
-                          Builder(
-                            builder: (context) => IconButton(
-                              tooltip: 'Android home settings',
-                              icon: const Icon(Icons.settings_outlined, size: 28, color: Color(0x66E6E0E9)),
-                              onPressed: () => context.read<DockBloc>().add(const DockHomeSettingsPressed()),
-                            ),
+                        // Top row: HOME-launcher escape hatch on the left, battery indicators on the right
+                        Row(
+                          children: [
+                            if (Platform.isAndroid)
+                              Builder(
+                                builder: (context) => IconButton(
+                                  tooltip: 'Android home settings',
+                                  icon: const Icon(
+                                    Icons.settings_outlined,
+                                    size: 28,
+                                    color: Color(0x66E6E0E9),
+                                  ),
+                                  onPressed: () => context
+                                      .read<SettingsBloc>()
+                                      .add(const SettingsHomeAppPickerOpened()),
+                                ),
+                              ),
+                            const Spacer(),
+                            const _BatteryRow(),
+                          ],
+                        ),
+                        const Expanded(
+                          child: Row(
+                            children: [
+                              Expanded(flex: 175, child: LocalCard()),
+                              SizedBox(width: 20),
+                              Expanded(flex: 100, child: IndiaCard()),
+                            ],
                           ),
-                        const Spacer(),
-                        // Device battery (tablet)
-                        BlocBuilder<DeviceBatteryBloc, DeviceBatteryState>(
-                          builder: (_, state) {
-                            if (state.level == null) return const SizedBox.shrink();
-                            return BatteryIndicator(
-                              percentage: state.level!,
-                              isCharging: state.isCharging,
-                            );
-                          },
                         ),
-                        const SizedBox(width: 16),
-                        // Sensor battery (average of all sensors)
-                        BlocBuilder<SensorBloc, SensorState>(
-                          buildWhen: (a, b) {
-                            if (a.rooms.length != b.rooms.length) return true;
-                            for (var i = 0; i < a.rooms.length; i++) {
-                              if (a.rooms[i].battery != b.rooms[i].battery) return true;
-                            }
-                            return false;
-                          },
-                          builder: (_, state) {
-                            final batteries = state.rooms
-                                .where((r) => r.configured && r.battery != null)
-                                .map((r) => r.battery!)
-                                .toList();
-                            if (batteries.isEmpty) return const SizedBox.shrink();
-                            final avgBattery = (batteries.reduce((a, b) => a + b) / batteries.length).round();
-                            return BatteryIndicator(percentage: avgBattery);
-                          },
-                        ),
+                        const SizedBox(height: 20),
+                        const SizedBox(height: 116, child: DockBar()),
+                        const SizedBox(height: 20),
+                        const SizedBox(height: 92, child: SensorStrip()),
                       ],
                     ),
-                    const Expanded(
-                      child: Row(children: [
-                        Expanded(flex: 175, child: LocalCard()),
-                        SizedBox(width: 20),
-                        Expanded(flex: 100, child: IndiaCard()),
-                      ]),
-                    ),
-                    const SizedBox(height: 20),
-                    const SizedBox(height: 116, child: DockBar()),
-                    const SizedBox(height: 20),
-                    const SizedBox(height: 92, child: SensorStrip()),
-                  ],
-                ),
+                  ),
+                  const Positioned(top: 28, right: 32, child: SettingsEntry()),
+                ],
               ),
             ),
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Tablet battery and averaged sensor battery.
+class _BatteryRow extends StatelessWidget {
+  const _BatteryRow();
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        BlocBuilder<DeviceBatteryBloc, DeviceBatteryState>(
+          builder: (_, state) {
+            if (state.level == null) return const SizedBox.shrink();
+            return BatteryIndicator(
+              percentage: state.level!,
+              isCharging: state.isCharging,
+            );
+          },
+        ),
+        const SizedBox(width: 16),
+        // Sensor battery (average of all sensors)
+        BlocBuilder<SensorBloc, SensorState>(
+          buildWhen: (a, b) {
+            if (a.rooms.length != b.rooms.length) return true;
+            for (var i = 0; i < a.rooms.length; i++) {
+              if (a.rooms[i].battery != b.rooms[i].battery) return true;
+            }
+            return false;
+          },
+          builder: (_, state) {
+            final batteries = state.rooms
+                .where((r) => r.configured && r.battery != null)
+                .map((r) => r.battery!)
+                .toList();
+            if (batteries.isEmpty) return const SizedBox.shrink();
+            final avgBattery =
+                (batteries.reduce((a, b) => a + b) / batteries.length).round();
+            return BatteryIndicator(percentage: avgBattery);
+          },
+        ),
+      ],
     );
   }
 }

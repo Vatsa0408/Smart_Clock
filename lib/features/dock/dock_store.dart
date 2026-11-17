@@ -28,15 +28,6 @@ class DockStore {
 
   bool get supported => Platform.isAndroid || Platform.isWindows;
 
-  /// Escape hatch while this app is the HOME launcher: opens Android's default-home picker.
-  Future<void> openHomeSettings() async {
-    if (!Platform.isAndroid) return;
-    await const AndroidIntent(
-      action: 'android.settings.HOME_SETTINGS',
-      flags: [0x10000000], // FLAG_ACTIVITY_NEW_TASK
-    ).launch().catchError((_) {});
-  }
-
   /// Android: launch the app by package. Windows: open the web equivalent.
   /// Errors (app not installed, no browser) are swallowed.
   Future<void> launch(DockApp app) async {

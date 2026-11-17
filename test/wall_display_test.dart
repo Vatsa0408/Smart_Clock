@@ -9,12 +9,17 @@ import 'package:mocktail/mocktail.dart';
 import 'package:smart_clock/features/clock/clock_bloc.dart';
 import 'package:smart_clock/features/device_battery/device_battery_bloc.dart';
 import 'package:smart_clock/features/device_battery/device_battery_store.dart';
+import 'package:smart_clock/features/diagnostics/diagnostics_bloc.dart';
+import 'package:smart_clock/features/diagnostics/diagnostics_store.dart';
 import 'package:smart_clock/features/display/display_bloc.dart';
 import 'package:smart_clock/features/display/display_store.dart';
 import 'package:smart_clock/features/dock/dock_bloc.dart';
 import 'package:smart_clock/features/dock/dock_store.dart';
 import 'package:smart_clock/features/sensor/sensor_bloc.dart';
 import 'package:smart_clock/features/sensor/sensor_store.dart';
+import 'package:smart_clock/features/settings/settings_bloc.dart';
+import 'package:smart_clock/features/settings/settings_store.dart';
+import 'package:smart_clock/features/settings/view/settings_page.dart';
 import 'package:smart_clock/features/weather/weather_bloc.dart';
 import 'package:smart_clock/features/weather/weather_store.dart';
 import 'package:smart_clock/main.dart';
@@ -36,6 +41,8 @@ void main() {
 
     await tester.pumpWidget(MultiBlocProvider(
       providers: [
+        BlocProvider(create: (_) => SettingsBloc(const SettingsStore())),
+        BlocProvider(create: (_) => DiagnosticsBloc(DiagnosticsStore(Directory.systemTemp))),
         BlocProvider(create: (_) => ClockBloc()),
         BlocProvider(create: (_) => WeatherBloc(const SampleWeatherStore())..add(const WeatherRequested())),
         BlocProvider(create: (_) => SensorBloc(const SampleSensorStore())),
@@ -49,6 +56,15 @@ void main() {
     expect(find.text('Bangalore · India'), findsOneWidget);
     expect(find.text('YouTube Music'), findsOneWidget);
     expect(tester.takeException(), isNull);
+    // A short press on the top-right corner does nothing; a 2 s hold opens Settings.
+    await tester.tapAt(const Offset(1200, 56));
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.byType(SettingsPage), findsNothing);
+    final g = await tester.startGesture(const Offset(1200, 56));
+    await tester.pump(const Duration(milliseconds: 2100));
+    await g.up();
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.byType(SettingsPage), findsOneWidget);
     await tester.pumpWidget(const SizedBox());
   });
 }
