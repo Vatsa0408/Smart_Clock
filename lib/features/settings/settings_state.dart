@@ -7,11 +7,13 @@ final class SettingsState extends Equatable {
     this.nightBrightness = 0.1,
     this.lowBatteryPct = 20,
     this.overheatC = 45.0,
+    this.burnInOrbit = true,
   });
 
   final int nightStartMin, nightEndMin, lowBatteryPct;
   final double nightBrightness;
   final double overheatC;
+  final bool burnInOrbit;
 
   SettingsState copyWith({
     int? nightStartMin,
@@ -19,12 +21,14 @@ final class SettingsState extends Equatable {
     double? nightBrightness,
     int? lowBatteryPct,
     double? overheatC,
+    bool? burnInOrbit,
   }) => SettingsState(
     nightStartMin: nightStartMin ?? this.nightStartMin,
     nightEndMin: nightEndMin ?? this.nightEndMin,
     nightBrightness: nightBrightness ?? this.nightBrightness,
     lowBatteryPct: lowBatteryPct ?? this.lowBatteryPct,
     overheatC: overheatC ?? this.overheatC,
+    burnInOrbit: burnInOrbit ?? this.burnInOrbit,
   );
 
   /// Primitives only, and never secrets (bindkeys, tokens): those go to a file.
@@ -34,6 +38,7 @@ final class SettingsState extends Equatable {
     'nb': nightBrightness,
     'lb': lowBatteryPct,
     'oh': overheatC,
+    'bo': burnInOrbit,
   };
 
   /// Each key falls back to its default, so adding fields later needs no migration.
@@ -43,6 +48,7 @@ final class SettingsState extends Equatable {
     nightBrightness: (j['nb'] as num?)?.toDouble() ?? 0.1,
     lowBatteryPct: (j['lb'] as num?)?.toInt() ?? 20,
     overheatC: (j['oh'] as num?)?.toDouble() ?? 45.0,
+    burnInOrbit: j['bo'] as bool? ?? true,
   );
 
   @override
@@ -52,5 +58,6 @@ final class SettingsState extends Equatable {
     nightBrightness,
     lowBatteryPct,
     overheatC,
+    burnInOrbit,
   ];
 }

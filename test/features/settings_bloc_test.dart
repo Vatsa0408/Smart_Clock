@@ -23,6 +23,7 @@ void main() {
     expect(bloc.state.nightStartMin, 1320);
     expect(bloc.state.nightEndMin, 420);
     expect(bloc.storagePrefix, 'SettingsBloc');
+    expect(bloc.state.burnInOrbit, isTrue);
   });
 
   test('events clamp, and a partial schedule keeps the rest', () async {
@@ -45,6 +46,7 @@ void main() {
       nightBrightness: 0.3,
       lowBatteryPct: 33,
       overheatC: 50,
+      burnInOrbit: false,
     );
     expect(SettingsState.fromJson(s.toJson()), s);
     expect(SettingsState.fromJson({}), const SettingsState());
@@ -54,6 +56,7 @@ void main() {
       'nb',
       'lb',
       'oh',
+      'bo',
     });
   });
 }

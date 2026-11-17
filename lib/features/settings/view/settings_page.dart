@@ -113,6 +113,12 @@ class _SettingsPageState extends State<SettingsPage> {
                   onChanged: (v) => bloc.add(SettingsOverheatChanged(v)),
                 ),
               ),
+              const _Header('Display'),
+              SwitchListTile(
+                title: const Text('Burn-in orbit (shift picture 4 px every 5 min)'),
+                value: s.burnInOrbit,
+                onChanged: (v) => bloc.add(SettingsBurnInToggled(v)),
+              ),
               if (Platform.isAndroid) ...[
                 const _Header('System'),
                 ListTile(

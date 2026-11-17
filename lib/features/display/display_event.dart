@@ -15,6 +15,11 @@ final class DisplayScheduleSet extends DisplayEvent {
   final double nightBrightness;
 }
 
+final class DisplayOrbitSet extends DisplayEvent {
+  const DisplayOrbitSet(this.on);
+  final bool on;
+}
+
 final class DisplayOverheatChanged extends DisplayEvent {
   const DisplayOverheatChanged(this.on);
   final bool on;

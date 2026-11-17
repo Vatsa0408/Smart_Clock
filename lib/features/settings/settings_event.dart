@@ -24,6 +24,11 @@ final class SettingsOverheatChanged extends SettingsEvent {
   final double c;
 }
 
+final class SettingsBurnInToggled extends SettingsEvent {
+  const SettingsBurnInToggled(this.on);
+  final bool on;
+}
+
 final class SettingsHomeAppPickerOpened extends SettingsEvent {
   const SettingsHomeAppPickerOpened();
 }

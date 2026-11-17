@@ -83,13 +83,15 @@ class SmartClockApp extends StatelessWidget {
         BlocProvider(
           create: (c) {
             final s = c.read<SettingsBloc>().state;
-            return DisplayBloc(const DisplayStore())..add(
-              DisplayScheduleSet(
-                s.nightStartMin,
-                s.nightEndMin,
-                s.nightBrightness,
-              ),
-            );
+            return DisplayBloc(const DisplayStore())
+              ..add(
+                DisplayScheduleSet(
+                  s.nightStartMin,
+                  s.nightEndMin,
+                  s.nightBrightness,
+                ),
+              )
+              ..add(DisplayOrbitSet(s.burnInOrbit));
           },
         ),
         BlocProvider(
@@ -120,6 +122,10 @@ class SmartClockApp extends StatelessWidget {
                 s.nightBrightness,
               ),
             ),
+          ),
+          BlocListener<SettingsBloc, SettingsState>(
+            listenWhen: (a, b) => a.burnInOrbit != b.burnInOrbit,
+            listener: (c, s) => c.read<DisplayBloc>().add(DisplayOrbitSet(s.burnInOrbit)),
           ),
           BlocListener<SettingsBloc, SettingsState>(
             listenWhen: (a, b) => a.lowBatteryPct != b.lowBatteryPct || a.overheatC != b.overheatC,
@@ -203,7 +209,11 @@ class WallDisplay extends StatelessWidget {
               height: 800,
               child: Stack(
                 children: [
-                  Padding(
+                  BlocSelector<DisplayBloc, DisplayState, int>(
+                    selector: (s) => s.shift,
+                    builder: (_, i) => Transform.translate(
+                      offset: _orbit[i],
+                      child: Padding(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 32,
                       vertical: 28,
@@ -246,6 +256,8 @@ class WallDisplay extends StatelessWidget {
                         const SizedBox(height: 92, child: SensorStrip()),
                       ],
                     ),
+                      ),
+                    ),
                   ),
                   const Positioned(top: 28, right: 32, child: SettingsEntry()),
                 ],
@@ -259,6 +271,18 @@ class WallDisplay extends StatelessWidget {
 }
 
 const _hot = Color(0xFFF44336);
+
+/// Burn-in orbit positions: 4 px steps around the origin.
+const _orbit = [
+  Offset.zero,
+  Offset(4, 0),
+  Offset(4, 4),
+  Offset(0, 4),
+  Offset(-4, 4),
+  Offset(-4, 0),
+  Offset(-4, -4),
+  Offset(0, -4),
+];
 
 /// Tablet battery (and overheat badge) and averaged sensor battery.
 class _BatteryRow extends StatelessWidget {

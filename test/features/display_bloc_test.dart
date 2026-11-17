@@ -14,6 +14,13 @@ void main() {
     expect(inWindow(7 * 60, start, end), isFalse); // end is exclusive
   });
 
+  test('orbitIndex steps every 5 minutes through 8 positions', () {
+    expect(orbitIndex(DateTime(2026, 1, 1, 0, 0)), 0);
+    expect(orbitIndex(DateTime(2026, 1, 1, 0, 5)), 1);
+    expect(orbitIndex(DateTime(2026, 1, 1, 0, 39)), 7);
+    expect(orbitIndex(DateTime(2026, 1, 1, 0, 40)), 0);
+  });
+
   late _MockStore store;
   late DisplayBloc bloc;
   setUp(() {
@@ -42,6 +49,16 @@ void main() {
     await add(const DisplayScheduleSet(0, 23 * 60 + 59, 0.1));
     expect(bloc.state.night, isFalse);
     verifyNever(() => store.setBrightness(any()));
+  });
+
+  test('orbit on shifts with ticks; off resets to 0 and stays', () async {
+    await add(const DisplayOrbitSet(true));
+    await add(DisplayMinuteTicked(DateTime(2026, 1, 1, 0, 10)));
+    expect(bloc.state.shift, 2);
+    await add(const DisplayOrbitSet(false));
+    expect(bloc.state.shift, 0);
+    await add(DisplayMinuteTicked(DateTime(2026, 1, 1, 0, 15)));
+    expect(bloc.state.shift, 0);
   });
 
   test('overheat dims at noon; no second brightness call when already night', () async {
