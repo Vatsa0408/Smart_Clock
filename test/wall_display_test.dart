@@ -15,6 +15,8 @@ import 'package:smart_clock/features/display/display_bloc.dart';
 import 'package:smart_clock/features/display/display_store.dart';
 import 'package:smart_clock/features/dock/dock_bloc.dart';
 import 'package:smart_clock/features/dock/dock_store.dart';
+import 'package:smart_clock/features/now_playing/now_playing_bloc.dart';
+import 'package:smart_clock/features/now_playing/now_playing_store.dart';
 import 'package:smart_clock/features/sensor/sensor_bloc.dart';
 import 'package:smart_clock/features/sensor/sensor_store.dart';
 import 'package:smart_clock/features/settings/settings_bloc.dart';
@@ -47,6 +49,7 @@ void main() {
         BlocProvider(create: (_) => WeatherBloc(const SampleWeatherStore())..add(const WeatherRequested())),
         BlocProvider(create: (_) => SensorBloc(const SampleSensorStore())),
         BlocProvider(create: (_) => DockBloc(const DockStore())),
+        BlocProvider(create: (_) => NowPlayingBloc(const NowPlayingStore())),
         BlocProvider(create: (_) => DisplayBloc(const DisplayStore())),
         BlocProvider(create: (_) => DeviceBatteryBloc(DeviceBatteryStore())),
       ],

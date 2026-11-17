@@ -18,6 +18,9 @@ import 'features/display/display_store.dart';
 import 'features/dock/dock_bloc.dart';
 import 'features/dock/dock_store.dart';
 import 'features/dock/view/dock_bar.dart';
+import 'features/now_playing/now_playing_bloc.dart';
+import 'features/now_playing/now_playing_store.dart';
+import 'features/now_playing/view/now_playing_bar.dart';
 import 'features/sensor/sensor_bloc.dart';
 import 'features/settings/settings_bloc.dart';
 import 'features/settings/settings_store.dart';
@@ -80,6 +83,10 @@ class SmartClockApp extends StatelessWidget {
               SensorBloc(const BleSensorStore())..add(const SensorRequested()),
         ),
         BlocProvider(create: (_) => DockBloc(const DockStore())),
+        BlocProvider(
+          create: (_) =>
+              NowPlayingBloc(const NowPlayingStore())..add(const NowPlayingStarted()),
+        ),
         BlocProvider(
           create: (c) {
             final s = c.read<SettingsBloc>().state;
@@ -237,7 +244,8 @@ class WallDisplay extends StatelessWidget {
                                       .add(const SettingsHomeAppPickerOpened()),
                                 ),
                               ),
-                            const Spacer(),
+                            const SizedBox(width: 12),
+                            const Expanded(child: NowPlayingBar()),
                             const _BatteryRow(),
                           ],
                         ),

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../diagnostics/diagnostics_bloc.dart';
+import '../../now_playing/now_playing_bloc.dart';
 import '../settings_bloc.dart';
 
 /// Hidden settings. Closes itself after 2 minutes without a touch, so it never hides the clock.
@@ -120,6 +121,19 @@ class _SettingsPageState extends State<SettingsPage> {
                 onChanged: (v) => bloc.add(SettingsBurnInToggled(v)),
               ),
               if (Platform.isAndroid) ...[
+                const _Header('Now playing'),
+                BlocBuilder<NowPlayingBloc, NowPlayingState>(
+                  builder: (context, n) => ListTile(
+                    title: Text(switch (n.access) {
+                      NowPlayingAccess.granted => 'Notification access granted',
+                      NowPlayingAccess.unsupported => 'Not supported on this device',
+                      _ => 'Grant notification access',
+                    }),
+                    onTap: n.access == NowPlayingAccess.denied || n.access == NowPlayingAccess.unknown
+                        ? () => context.read<NowPlayingBloc>().add(const NowPlayingAccessRequested())
+                        : null,
+                  ),
+                ),
                 const _Header('System'),
                 ListTile(
                   title: const Text('Choose home app (leave launcher mode)'),
