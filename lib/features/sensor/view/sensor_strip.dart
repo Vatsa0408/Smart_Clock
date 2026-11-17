@@ -27,7 +27,7 @@ class SensorStrip extends StatelessWidget {
               key: ValueKey(r.name),
               delay: Duration(milliseconds: 600 + 100 * i),
               duration: const Duration(milliseconds: 800),
-              child: _RoomCard(r, fresh: r.seenAt != null && now.difference(r.seenAt!) < _staleAfter),
+              child: _RoomCard(r, age: r.seenAt == null ? null : now.difference(r.seenAt!)),
             ),
           ),
         ],
@@ -37,14 +37,17 @@ class SensorStrip extends StatelessWidget {
 }
 
 class _RoomCard extends StatelessWidget {
-  const _RoomCard(this.room, {required this.fresh});
+  const _RoomCard(this.room, {required this.age});
   final RoomSensor room;
-  final bool fresh;
+
+  /// null = never seen.
+  final Duration? age;
 
   @override
   Widget build(BuildContext context) {
-    final t = fresh ? room.temperature : null;
-    final h = fresh ? room.humidity : null;
+    final stale = age == null || age! >= _staleAfter;
+    final t = room.temperature;
+    final h = room.humidity;
     final value = flex(34, 600, Colors.white, em: -.02, height: 1, tabular: true);
 
     return Container(
@@ -57,9 +60,11 @@ class _RoomCard extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(room.name, style: flex(18, 600, const Color(0xFFCAC4D0), height: 1), overflow: TextOverflow.ellipsis),
+          Text(stale && age != null ? '${room.name} · ${ageLabel(age!)}' : room.name, style: flex(18, 600, const Color(0xFFCAC4D0), height: 1), overflow: TextOverflow.ellipsis),
           const SizedBox(height: 8),
-          Row(
+          Opacity(
+            opacity: stale ? .45 : 1,
+            child: Row(
             children: [
               Loop(
                 builder: (_, s) => Transform.scale(
@@ -79,6 +84,7 @@ class _RoomCard extends StatelessWidget {
               const SizedBox(width: 10),
               Text(h == null ? '--%' : '${h.round()}%', style: value),
             ],
+          ),
           ),
         ],
       ),

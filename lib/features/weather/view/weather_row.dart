@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../shared/ui.dart';
+import '../../clock/clock_bloc.dart';
 import '../weather_bloc.dart';
-import '../weather_store.dart';
 
 /// Icon + temp + condition + H/L row; [bangalore] picks the reading and palette.
 class WeatherRow extends StatelessWidget {
@@ -19,11 +19,15 @@ class WeatherRow extends StatelessWidget {
     final accent = bangalore ? const Color(0xFFEFB8C8) : const Color(0xFFD0BCFF);
     final fg = bangalore ? const Color(0xFF492532) : const Color(0xFF381E72);
     final text = bangalore ? const Color(0xFFFFD8E4) : const Color(0xFFEADDFF);
-    return BlocSelector<WeatherBloc, WeatherState, Weather?>(
-      selector: (s) => bangalore ? s.bangalore : s.local,
-      builder: (context, w) {
-        if (w == null) return const SizedBox.shrink();
-        return Row(
+    context.select((ClockBloc b) => b.state.now.minute); // minute-rate rebuild so the age label advances
+    final w = context.select((WeatherBloc b) => bangalore ? b.state.bangalore : b.state.local);
+    final at = context.select((WeatherBloc b) => b.state.fetchedAt);
+    if (w == null) return const SizedBox.shrink();
+    final age = at == null ? null : DateTime.now().difference(at);
+    final stale = age == null || age > const Duration(minutes: 45);
+    return Opacity(
+      opacity: stale ? .55 : 1,
+      child: Row(
           children: [
             _WeatherIcon(rain: bangalore, size: big ? 112 : 88, badge: accent, fg: fg),
             SizedBox(width: big ? 28 : 22),
@@ -37,12 +41,13 @@ class WeatherRow extends StatelessWidget {
                   Text(w.condition, style: flex(big ? 30 : 24, 600, text), overflow: TextOverflow.ellipsis),
                   const SizedBox(height: 4),
                   Text('H ${w.high}° · L ${w.low}°', style: flex(big ? 22 : 20, 500, accent)),
+                  if (stale && age != null)
+                    Text('Updated ${ageLabel(age)}', style: flex(16, 500, accent.withValues(alpha: .8))),
                 ],
               ),
             ),
           ],
-        );
-      },
+        ),
     );
   }
 }

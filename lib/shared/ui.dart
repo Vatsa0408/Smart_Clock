@@ -17,6 +17,14 @@ TextStyle flex(double size, double weight, Color color,
       fontFeatures: tabular ? const [FontFeature.tabularFigures()] : null,
     );
 
+/// "just now" / "5 min ago" / "3 h ago" / "2 d ago".
+String ageLabel(Duration d) => switch (d) {
+      Duration(inMinutes: < 1) => 'just now',
+      Duration(inMinutes: < 60) => '${d.inMinutes} min ago',
+      Duration(inHours: < 48) => '${d.inHours} h ago',
+      _ => '${d.inDays} d ago',
+    };
+
 /// 0 -> 1 -> 0 smooth wave (CSS ease-in-out alternate) over [period] seconds.
 double wave(double s, double period, [double phase = 0]) =>
     0.5 - 0.5 * math.cos(2 * math.pi * (s / period + phase));
