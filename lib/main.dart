@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -9,6 +11,8 @@ import 'features/clock/view/clock_cards.dart';
 import 'features/device_battery/device_battery_bloc.dart';
 import 'features/device_battery/device_battery_event.dart';
 import 'features/device_battery/device_battery_state.dart';
+import 'features/display/display_bloc.dart';
+import 'features/display/display_store.dart';
 import 'features/dock/dock_bloc.dart';
 import 'features/dock/dock_store.dart';
 import 'features/dock/view/dock_bar.dart';
@@ -38,9 +42,10 @@ class SmartClockApp extends StatelessWidget {
     return MultiBlocProvider(
       providers: [
         BlocProvider(create: (_) => ClockBloc()),
-        BlocProvider(create: (_) => WeatherBloc(const SampleWeatherStore())..add(const WeatherRequested())),
+        BlocProvider(create: (_) => WeatherBloc(const OpenMeteoWeatherStore())..add(const WeatherRequested())),
         BlocProvider(create: (_) => SensorBloc(const BleSensorStore())..add(const SensorRequested())),
         BlocProvider(create: (_) => DockBloc(const DockStore())),
+        BlocProvider(create: (_) => DisplayBloc(const DisplayStore())),
         BlocProvider(create: (_) => DeviceBatteryBloc()..add(const DeviceBatteryRequested())),
       ],
       child: MaterialApp(
@@ -78,6 +83,28 @@ class WallDisplay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final mq = MediaQuery.of(context);
+    return BlocListener<ClockBloc, ClockState>(
+      listenWhen: (a, b) => a.now.minute != b.now.minute,
+      listener: (c, s) => c.read<DisplayBloc>().add(DisplayMinuteTicked(s.now)),
+      child: BlocSelector<DisplayBloc, DisplayState, bool>(
+        selector: (s) => s.night,
+        builder: (context, night) => MediaQuery(
+          // Night: freeze the Loop animations (reuses the reduced-motion path).
+          data: mq.copyWith(disableAnimations: mq.disableAnimations || night),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              _wall(),
+              if (night) const IgnorePointer(child: ColoredBox(color: Color(0x80000000))),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _wall() {
     return Scaffold(
       body: ColoredBox(
         color: const Color(0xFF141218),
@@ -90,10 +117,18 @@ class WallDisplay extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 28),
                 child: Column(
                   children: [
-                    // Top row with battery indicators on the right
+                    // Top row: HOME-launcher escape hatch on the left, battery indicators on the right
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
                       children: [
+                        if (Platform.isAndroid)
+                          Builder(
+                            builder: (context) => IconButton(
+                              tooltip: 'Android home settings',
+                              icon: const Icon(Icons.settings_outlined, size: 28, color: Color(0x66E6E0E9)),
+                              onPressed: () => context.read<DockBloc>().add(const DockHomeSettingsPressed()),
+                            ),
+                          ),
+                        const Spacer(),
                         // Device battery (tablet)
                         BlocBuilder<DeviceBatteryBloc, DeviceBatteryState>(
                           builder: (_, state) {

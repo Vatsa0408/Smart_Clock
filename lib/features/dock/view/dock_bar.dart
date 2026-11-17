@@ -5,11 +5,12 @@ import '../../../shared/ui.dart';
 import '../dock_bloc.dart';
 import '../dock_store.dart';
 
-/// Icon + badge colours per dock slot (design order: purple, rose, lilac).
+/// Icon + badge colours per dock slot (purple, rose, lilac, green).
 const _slots = [
   (icon: Icons.music_note_rounded, bg: Color(0xFFD0BCFF), fg: Color(0xFF381E72)),
   (icon: Icons.graphic_eq_rounded, bg: Color(0xFFEFB8C8), fg: Color(0xFF492532)),
   (icon: Icons.home_outlined, bg: Color(0xFFCCC2DC), fg: Color(0xFF332D41)),
+  (icon: Icons.sensors_rounded, bg: Color(0xFFB4E5BC), fg: Color(0xFF1B3A22)),
 ];
 
 /// Spotify sits second in the store; the design's rose/home slots map by index.
@@ -19,7 +20,7 @@ class DockBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final state = context.watch<DockBloc>().state;
-    final apps = state.apps.take(3).toList();
+    final apps = state.apps;
 
     return Row(
       children: [
@@ -82,7 +83,7 @@ class _DockItemState extends State<_DockItem> {
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 180),
             height: 116,
-            padding: const EdgeInsets.only(left: 20, right: 36),
+            padding: const EdgeInsets.only(left: 16, right: 24),
             decoration: BoxDecoration(
               color: _hover ? const Color(0xFF36343B) : const Color(0xFF2B2930),
               borderRadius: BorderRadius.circular(58),
@@ -95,22 +96,21 @@ class _DockItemState extends State<_DockItem> {
               children: [
                 Loop(
                   builder: (_, s) => Container(
-                    width: 76,
-                    height: 76,
+                    width: 64,
+                    height: 64,
                     decoration: BoxDecoration(
                       color: slot.bg,
                       // morph: 50% <-> 30% radius, 7s
-                      borderRadius: BorderRadius.circular(76 * (.5 - .2 * wave(s, 7, widget.phase))),
+                      borderRadius: BorderRadius.circular(64 * (.5 - .2 * wave(s, 7, widget.phase))),
                     ),
-                    child: Icon(slot.icon, size: 40, color: slot.fg),
+                    child: Icon(slot.icon, size: 34, color: slot.fg),
                   ),
                 ),
-                const SizedBox(width: 22),
+                const SizedBox(width: 16),
                 Flexible(
-                  child: Text(
-                    widget.app.label,
-                    overflow: TextOverflow.ellipsis,
-                    style: flex(28, 600, const Color(0xFFE6E0E9)),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(widget.app.label, style: flex(26, 600, const Color(0xFFE6E0E9))),
                   ),
                 ),
               ],

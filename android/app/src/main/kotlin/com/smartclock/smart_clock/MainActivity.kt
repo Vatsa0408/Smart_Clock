@@ -17,6 +17,11 @@ class MainActivity : FlutterActivity() {
     private val CHANNEL = "smart_clock/battery"
     private var batteryReceiver: BroadcastReceiver? = null
 
+    override fun onCreate(savedInstanceState: android.os.Bundle?) {
+        super.onCreate(savedInstanceState)
+        window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+    }
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler { call, result ->
@@ -30,6 +35,16 @@ class MainActivity : FlutterActivity() {
                 "playLowBatterySound" -> {
                     playLowBatterySound()
                     result.success(true)
+                }
+                else -> result.notImplemented()
+            }
+        }
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "smart_clock/display").setMethodCallHandler { call, result ->
+            when (call.method) {
+                "setBrightness" -> {
+                    val v = (call.arguments as Double).toFloat() // -1f = follow system
+                    runOnUiThread { window.attributes = window.attributes.apply { screenBrightness = v } }
+                    result.success(null)
                 }
                 else -> result.notImplemented()
             }

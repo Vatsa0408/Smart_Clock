@@ -92,6 +92,7 @@ class BleSensorStore implements SensorStore {
   @override
   Stream<MiValues> watch(Map<String, Uint8List> keys) {
     final c = StreamController<MiValues>();
+    Timer? restart;
     c.onListen = () async {
       try {
         await UniversalBle.requestPermissions();
@@ -103,14 +104,22 @@ class BleSensorStore implements SensorStore {
           }
         };
         // One long scan, no start/stop cycling (Android throttles >5 starts per 30 s).
-        // ponytail: Android may turn scans >30 min opportunistic; add a 25 min
-        // stop/start timer here if readings stop on the tablet.
         await UniversalBle.startScan();
+        // Android downgrades scans >30 min to opportunistic: restart every 25 min.
+        restart = Timer.periodic(const Duration(minutes: 25), (_) async {
+          try {
+            await UniversalBle.stopScan();
+            await UniversalBle.startScan();
+          } catch (e) {
+            c.addError(e);
+          }
+        });
       } catch (e) {
         c.addError(e);
       }
     };
     c.onCancel = () async {
+      restart?.cancel();
       UniversalBle.onScanResult = null;
       try {
         await UniversalBle.stopScan();

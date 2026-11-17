@@ -4,6 +4,10 @@ sealed class DockEvent {
   const DockEvent();
 }
 
+final class DockHomeSettingsPressed extends DockEvent {
+  const DockHomeSettingsPressed();
+}
+
 final class DockAppPressed extends DockEvent {
   const DockAppPressed(this.app);
   final DockApp app;

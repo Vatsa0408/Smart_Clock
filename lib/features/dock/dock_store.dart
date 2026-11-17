@@ -16,15 +16,26 @@ class DockStore {
     DockApp('YouTube Music', 'com.google.android.apps.youtube.music'),
     DockApp('Spotify', 'com.spotify.music'),
     DockApp('Google Home', 'com.google.android.apps.chromecast.app'),
+    DockApp('Xiaomi Home', 'com.xiaomi.smarthome'),
   ];
 
   static const _webUrls = {
     'com.google.android.apps.youtube.music': 'https://music.youtube.com',
     'com.spotify.music': 'https://open.spotify.com',
     'com.google.android.apps.chromecast.app': 'https://home.google.com',
+    'com.xiaomi.smarthome': 'https://home.mi.com',
   };
 
   bool get supported => Platform.isAndroid || Platform.isWindows;
+
+  /// Escape hatch while this app is the HOME launcher: opens Android's default-home picker.
+  Future<void> openHomeSettings() async {
+    if (!Platform.isAndroid) return;
+    await const AndroidIntent(
+      action: 'android.settings.HOME_SETTINGS',
+      flags: [0x10000000], // FLAG_ACTIVITY_NEW_TASK
+    ).launch().catchError((_) {});
+  }
 
   /// Android: launch the app by package. Windows: open the web equivalent.
   /// Errors (app not installed, no browser) are swallowed.
