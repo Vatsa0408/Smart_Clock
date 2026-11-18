@@ -8,12 +8,20 @@ import 'package:hydrated_bloc/hydrated_bloc.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:smart_clock/features/clock/clock_bloc.dart';
 import 'package:smart_clock/features/device_battery/device_battery_bloc.dart';
+import 'package:smart_clock/features/device_battery/device_battery_store.dart';
+import 'package:smart_clock/features/diagnostics/diagnostics_bloc.dart';
+import 'package:smart_clock/features/diagnostics/diagnostics_store.dart';
 import 'package:smart_clock/features/display/display_bloc.dart';
 import 'package:smart_clock/features/display/display_store.dart';
 import 'package:smart_clock/features/dock/dock_bloc.dart';
 import 'package:smart_clock/features/dock/dock_store.dart';
+import 'package:smart_clock/features/now_playing/now_playing_bloc.dart';
+import 'package:smart_clock/features/now_playing/now_playing_store.dart';
 import 'package:smart_clock/features/sensor/sensor_bloc.dart';
 import 'package:smart_clock/features/sensor/sensor_store.dart';
+import 'package:smart_clock/features/settings/settings_bloc.dart';
+import 'package:smart_clock/features/settings/settings_store.dart';
+import 'package:smart_clock/features/settings/view/settings_page.dart';
 import 'package:smart_clock/features/weather/weather_bloc.dart';
 import 'package:smart_clock/features/weather/weather_store.dart';
 import 'package:smart_clock/main.dart';
@@ -35,12 +43,15 @@ void main() {
 
     await tester.pumpWidget(MultiBlocProvider(
       providers: [
+        BlocProvider(create: (_) => SettingsBloc(const SettingsStore())),
+        BlocProvider(create: (_) => DiagnosticsBloc(DiagnosticsStore(Directory.systemTemp))),
         BlocProvider(create: (_) => ClockBloc()),
         BlocProvider(create: (_) => WeatherBloc(const SampleWeatherStore())..add(const WeatherRequested())),
         BlocProvider(create: (_) => SensorBloc(const SampleSensorStore())),
         BlocProvider(create: (_) => DockBloc(const DockStore())),
+        BlocProvider(create: (_) => NowPlayingBloc(const NowPlayingStore())),
         BlocProvider(create: (_) => DisplayBloc(const DisplayStore())),
-        BlocProvider(create: (_) => DeviceBatteryBloc()),
+        BlocProvider(create: (_) => DeviceBatteryBloc(DeviceBatteryStore())),
       ],
       child: const MaterialApp(home: WallDisplay()),
     ));
@@ -48,6 +59,10 @@ void main() {
     expect(find.text('Bangalore · India'), findsOneWidget);
     expect(find.text('YouTube Music'), findsOneWidget);
     expect(tester.takeException(), isNull);
+    await tester.tap(find.text('App settings'));
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.byType(SettingsPage), findsOneWidget);
     await tester.pumpWidget(const SizedBox());
   });
 }

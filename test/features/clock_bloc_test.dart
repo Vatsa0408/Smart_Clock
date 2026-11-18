@@ -14,6 +14,10 @@ void main() {
     HydratedBloc.storage = storage;
   });
 
+  test('storagePrefix is obfuscation-proof', () {
+    expect(ClockBloc().storagePrefix, 'ClockBloc');
+  });
+
   test('India offset is computed from UTC+5:30', () {
     // 12:00 UTC on a UTC device -> 17:30 IST, 5 h 30 min ahead.
     final s = ClockState(now: DateTime.utc(2026, 1, 1, 12));

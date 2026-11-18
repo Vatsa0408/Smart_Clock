@@ -1,0 +1,21 @@
+name: ci
+on:
+  pull_request:
+  push:
+    branches: [main]
+jobs:
+  analyze-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.47.x
+          cache: true
+      - name: Placeholder sensor config (real file is gitignored)
+        run: mkdir -p assets/config && echo '{}' > assets/config/sensors.json
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test

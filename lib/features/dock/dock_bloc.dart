@@ -10,7 +10,6 @@ class DockBloc extends Bloc<DockEvent, DockState> {
   DockBloc(this._store)
     : super(DockState(apps: DockStore.apps, enabled: _store.supported)) {
     on<DockAppPressed>((e, emit) => _store.launch(e.app));
-    on<DockHomeSettingsPressed>((e, emit) => _store.openHomeSettings());
   }
 
   final DockStore _store;

@@ -1,24 +1,20 @@
-import 'package:equatable/equatable.dart';
+part of 'device_battery_bloc.dart';
 
-abstract class DeviceBatteryEvent extends Equatable {
+sealed class DeviceBatteryEvent {
   const DeviceBatteryEvent();
-
-  @override
-  List<Object?> get props => [];
 }
 
-class DeviceBatteryRequested extends DeviceBatteryEvent {
+final class DeviceBatteryRequested extends DeviceBatteryEvent {
   const DeviceBatteryRequested();
-
-  @override
-  List<Object?> get props => [];
 }
 
-class DeviceBatteryUpdated extends DeviceBatteryEvent {
-  const DeviceBatteryUpdated({required this.level, this.isCharging = false});
-  final int level;
-  final bool isCharging;
+final class DeviceBatteryThresholdsSet extends DeviceBatteryEvent {
+  const DeviceBatteryThresholdsSet(this.lowPct, this.overheatC);
+  final int lowPct;
+  final double overheatC;
+}
 
-  @override
-  List<Object?> get props => [level, isCharging];
+final class DeviceBatteryNightChanged extends DeviceBatteryEvent {
+  const DeviceBatteryNightChanged(this.night);
+  final bool night;
 }
