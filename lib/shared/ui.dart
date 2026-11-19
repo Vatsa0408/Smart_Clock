@@ -177,3 +177,127 @@ class BatteryIndicator extends StatelessWidget {
     );
   }
 }
+
+// Design palette (Material 3 dark, from the wall-display reference).
+const kPrimary = Color(0xFFD0BCFF), kOnPrimary = Color(0xFF381E72);
+const kSurfaceHi = Color(0xFF36343B), kSurface = Color(0xFF2B2930), kSurfaceLo = Color(0xFF211F26);
+const kSecondary = Color(0xFF4A4458), kOnSecondary = Color(0xFFE8DEF8);
+const kMuted = Color(0xFFCAC4D0), kText = Color(0xFFE6E0E9), kOutline = Color(0xFF938F99);
+
+/// "06:30" or "6:30 AM".
+String hm(int h, int m, bool hour24) {
+  final mm = m.toString().padLeft(2, '0');
+  if (hour24) return '${h.toString().padLeft(2, '0')}:$mm';
+  return '${h % 12 == 0 ? 12 : h % 12}:$mm ${h < 12 ? 'AM' : 'PM'}';
+}
+
+/// "mm:ss" or "h:mm:ss".
+String clockMs(int sec) {
+  String p(int n) => n.toString().padLeft(2, '0');
+  final h = sec ~/ 3600, m = sec % 3600 ~/ 60;
+  return '${h > 0 ? '$h:${p(m)}' : p(m)}:${p(sec % 60)}';
+}
+
+/// The design's ".btn": pill button, [size] px semibold label, disabled when [onTap] is null.
+class Btn extends StatelessWidget {
+  const Btn({
+    super.key,
+    required this.onTap,
+    required this.bg,
+    required this.fg,
+    required this.child,
+    this.size = 20,
+    this.width,
+    this.height,
+    this.padding,
+    this.radius = 999,
+    this.alignment = Alignment.center,
+    this.border,
+    this.semantics,
+  });
+  final VoidCallback? onTap;
+  final Color bg, fg;
+  final Widget child;
+  final double size, radius;
+  final double? width, height;
+  final EdgeInsets? padding;
+  final AlignmentGeometry alignment;
+  final BorderSide? border;
+  final String? semantics;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+        button: true,
+        label: semantics,
+        child: Opacity(
+          opacity: onTap == null ? .4 : 1,
+          child: Material(
+            color: bg,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(radius), side: border ?? BorderSide.none),
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              onTap: onTap,
+              child: Container(
+                width: width,
+                height: height,
+                padding: padding,
+                alignment: alignment,
+                child: DefaultTextStyle(
+                  style: flex(size, 600, fg),
+                  child: IconTheme(data: IconThemeData(color: fg), child: child),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+}
+
+/// 72x40 switch from the design (thumb 18 off / 28 on).
+class Toggle extends StatelessWidget {
+  const Toggle({super.key, required this.on, required this.onTap, required this.label});
+  final bool on;
+  final VoidCallback onTap;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+        toggled: on,
+        label: label,
+        child: GestureDetector(
+          onTap: onTap,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            width: 72,
+            height: 40,
+            padding: const EdgeInsets.symmetric(horizontal: 6),
+            alignment: on ? Alignment.centerRight : Alignment.centerLeft,
+            decoration: BoxDecoration(
+              color: on ? kPrimary : kSurface,
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(color: on ? kPrimary : kOutline, width: 2),
+            ),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: on ? 28 : 18,
+              height: on ? 28 : 18,
+              decoration: BoxDecoration(shape: BoxShape.circle, color: on ? kOnPrimary : kOutline),
+            ),
+          ),
+        ),
+      );
+}
+
+/// Selected / unselected colours of a segmented choice button.
+(Color bg, Color fg) segColors(bool on) => on ? (kPrimary, kOnPrimary) : (kSurfaceHi, kText);
+
+/// Section label ("Repeat", "Sound"...).
+class SectionLabel extends StatelessWidget {
+  const SectionLabel(this.text, {super.key, this.top = 0});
+  final String text;
+  final double top;
+
+  @override
+  Widget build(BuildContext context) =>
+      Padding(padding: EdgeInsets.only(top: top), child: Text(text, style: flex(18, 600, kMuted)));
+}

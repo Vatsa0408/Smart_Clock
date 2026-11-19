@@ -36,3 +36,13 @@ final class SettingsHomeAppPickerOpened extends SettingsEvent {
 final class SettingsAndroidSettingsOpened extends SettingsEvent {
   const SettingsAndroidSettingsOpened();
 }
+
+final class SettingsNightAutoToggled extends SettingsEvent {
+  const SettingsNightAutoToggled(this.on);
+  final bool on;
+}
+
+final class SettingsAmbientToggled extends SettingsEvent {
+  const SettingsAmbientToggled(this.on);
+  final bool on;
+}

@@ -4,8 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../shared/ui.dart';
+import '../../device_battery/view/battery_row.dart';
+import '../../settings/view/settings_entry.dart';
 import '../../weather/view/weather_row.dart';
 import '../clock_bloc.dart';
+import 'glance_chips.dart';
 
 const _days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 const _months = [
@@ -108,7 +111,7 @@ class LocalCard extends StatelessWidget {
           (left: null, right: -150, top: -190, bottom: null),
           (left: -170, right: null, top: null, bottom: -230),
         ],
-        padding: const EdgeInsets.fromLTRB(44, 36, 44, 40),
+        padding: const EdgeInsets.fromLTRB(44, 30, 44, 34),
         borderRadius: BorderRadius.circular(64),
         delay: Duration.zero,
         child: Column(
@@ -142,7 +145,7 @@ class LocalCard extends StatelessWidget {
                         hh: hh,
                         mm: mm,
                         ampm: ap,
-                        size: 224,
+                        size: 200,
                         ampmSize: 44,
                         ampmColor: const Color(0xFFD0BCFF),
                         gap: 18,
@@ -150,10 +153,11 @@ class LocalCard extends StatelessWidget {
                     },
                   ),
                 ),
-                const SizedBox(height: 22),
+                const SizedBox(height: 18),
                 const _SecondsBar(),
               ],
             ),
+            const GlanceChips(),
             const WeatherRow(bangalore: false),
           ],
         ),
@@ -211,7 +215,7 @@ class IndiaCard extends StatelessWidget {
         (left: null, right: -130, top: -170, bottom: null),
         (left: -150, right: null, top: null, bottom: -190),
       ],
-      padding: const EdgeInsets.fromLTRB(44, 36, 40, 40),
+      padding: const EdgeInsets.fromLTRB(44, 28, 36, 30),
       borderRadius: const BorderRadius.only(
         topLeft: Radius.circular(64),
         topRight: Radius.circular(64),
@@ -223,7 +227,19 @@ class IndiaCard extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _Pill('Bangalore · India', Color(0xFFEFB8C8), Color(0xFF492532)),
+          const Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _Pill('Bangalore · India', Color(0xFFEFB8C8), Color(0xFF492532)),
+              SizedBox(height: 14),
+              Wrap(
+                spacing: 12,
+                runSpacing: 6,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [SettingsEntry(), BatteryRow()],
+              ),
+            ],
+          ),
           BlocBuilder<ClockBloc, ClockState>(
             buildWhen: (a, b) =>
                 a.india.minute != b.india.minute || a.india.hour != b.india.hour || a.hour24 != b.hour24,
@@ -242,7 +258,7 @@ class IndiaCard extends StatelessWidget {
                     ampmColor: const Color(0xFFEFB8C8),
                     gap: 12,
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 12),
                   Text('IST · ${s.indiaOffset}', style: flex(22, 500, const Color(0xFFEFB8C8))),
                 ],
               );

@@ -5,15 +5,16 @@ import '../../../shared/ui.dart';
 import '../dock_bloc.dart';
 import '../dock_store.dart';
 
-/// Icon + badge colours per dock slot (purple, rose, lilac, green).
+/// Icon + badge colours per dock slot, in [DockStore.apps] order:
+/// YouTube Music (purple), Spotify (green; not in the design), Google Home (rose), Xiaomi Home (lilac).
 const _slots = [
   (icon: Icons.music_note_rounded, bg: Color(0xFFD0BCFF), fg: Color(0xFF381E72)),
-  (icon: Icons.graphic_eq_rounded, bg: Color(0xFFEFB8C8), fg: Color(0xFF492532)),
-  (icon: Icons.home_outlined, bg: Color(0xFFCCC2DC), fg: Color(0xFF332D41)),
-  (icon: Icons.sensors_rounded, bg: Color(0xFFB4E5BC), fg: Color(0xFF1B3A22)),
+  (icon: Icons.graphic_eq_rounded, bg: Color(0xFFB4E5BC), fg: Color(0xFF1B3A22)),
+  (icon: Icons.home_outlined, bg: Color(0xFFEFB8C8), fg: Color(0xFF492532)),
+  (icon: Icons.grid_view_rounded, bg: Color(0xFFCCC2DC), fg: Color(0xFF332D41)),
 ];
 
-/// Spotify sits second in the store; the design's rose/home slots map by index.
+/// App launchers (design: 100 px pills with a morphing icon badge).
 class DockBar extends StatelessWidget {
   const DockBar({super.key});
 
@@ -25,7 +26,7 @@ class DockBar extends StatelessWidget {
     return Row(
       children: [
         for (final (i, app) in apps.indexed) ...[
-          if (i > 0) const SizedBox(width: 20),
+          if (i > 0) const SizedBox(width: 12),
           Expanded(
             child: Rise(
               key: ValueKey(app.package),
@@ -82,11 +83,11 @@ class _DockItemState extends State<_DockItem> {
           curve: const Cubic(.2, 0, 0, 1),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 180),
-            height: 116,
-            padding: const EdgeInsets.only(left: 16, right: 24),
+            height: 100,
+            padding: const EdgeInsets.only(left: 14, right: 20),
             decoration: BoxDecoration(
               color: _hover ? const Color(0xFF36343B) : const Color(0xFF2B2930),
-              borderRadius: BorderRadius.circular(58),
+              borderRadius: BorderRadius.circular(50),
               border: Border.all(
                 color: _focus ? const Color(0xFFD0BCFF) : Colors.transparent,
                 width: 4,
@@ -96,21 +97,21 @@ class _DockItemState extends State<_DockItem> {
               children: [
                 Loop(
                   builder: (_, s) => Container(
-                    width: 64,
-                    height: 64,
+                    width: 56,
+                    height: 56,
                     decoration: BoxDecoration(
                       color: slot.bg,
                       // morph: 50% <-> 30% radius, 7s
-                      borderRadius: BorderRadius.circular(64 * (.5 - .2 * wave(s, 7, widget.phase))),
+                      borderRadius: BorderRadius.circular(56 * (.5 - .2 * wave(s, 7, widget.phase))),
                     ),
-                    child: Icon(slot.icon, size: 34, color: slot.fg),
+                    child: Icon(slot.icon, size: 32, color: slot.fg),
                   ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 14),
                 Flexible(
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
-                    child: Text(widget.app.label, style: flex(26, 600, const Color(0xFFE6E0E9))),
+                    child: Text(widget.app.label, style: flex(22, 600, const Color(0xFFE6E0E9))),
                   ),
                 ),
               ],
