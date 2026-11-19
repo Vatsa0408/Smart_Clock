@@ -4,6 +4,8 @@ final class DeviceBatteryState extends Equatable {
   const DeviceBatteryState({
     this.level,
     this.isCharging = false,
+    this.plugged = false,
+    this.currentMa,
     this.tempC,
     this.low = false,
     this.overheat = false,
@@ -14,6 +16,8 @@ final class DeviceBatteryState extends Equatable {
 
   final int? level;
   final bool isCharging;
+  final bool plugged;
+  final int? currentMa;
   final double? tempC;
   final bool low;
   final bool overheat;
@@ -24,6 +28,8 @@ final class DeviceBatteryState extends Equatable {
   DeviceBatteryState copyWith({
     int? level,
     bool? isCharging,
+    bool? plugged,
+    int? currentMa,
     double? tempC,
     bool? low,
     bool? overheat,
@@ -34,6 +40,8 @@ final class DeviceBatteryState extends Equatable {
       DeviceBatteryState(
         level: level ?? this.level,
         isCharging: isCharging ?? this.isCharging,
+        plugged: plugged ?? this.plugged,
+        currentMa: currentMa ?? this.currentMa,
         tempC: tempC ?? this.tempC,
         low: low ?? this.low,
         overheat: overheat ?? this.overheat,
@@ -43,5 +51,5 @@ final class DeviceBatteryState extends Equatable {
       );
 
   @override
-  List<Object?> get props => [level, isCharging, tempC, low, overheat, lowPct, overheatC, night];
+  List<Object?> get props => [level, isCharging, plugged, currentMa, tempC, low, overheat, lowPct, overheatC, night];
 }

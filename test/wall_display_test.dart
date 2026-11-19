@@ -9,6 +9,8 @@ import 'package:mocktail/mocktail.dart';
 import 'package:smart_clock/features/alarms/alarms_bloc.dart';
 import 'package:smart_clock/features/calendar/calendar_bloc.dart';
 import 'package:smart_clock/features/calendar/calendar_store.dart';
+import 'package:smart_clock/features/charge_control/charge_control_bloc.dart';
+import 'package:smart_clock/features/charge_control/charge_control_store.dart';
 import 'package:smart_clock/features/clock/clock_bloc.dart';
 import 'package:smart_clock/features/controls/controls_bloc.dart';
 import 'package:smart_clock/features/device_battery/device_battery_bloc.dart';
@@ -66,6 +68,7 @@ void main() {
         BlocProvider(create: (_) => NowPlayingBloc(const NowPlayingStore())),
         BlocProvider(create: (_) => DisplayBloc(const DisplayStore())),
         BlocProvider(create: (_) => DeviceBatteryBloc(DeviceBatteryStore())),
+        BlocProvider(create: (_) => ChargeControlBloc(const ChargeControlStore())),
       ],
       child: const MaterialApp(home: WallDisplay()),
     ));

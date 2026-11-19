@@ -12,6 +12,7 @@ final class DisplayState extends Equatable {
     this.overheat = false,
     this.orbit = false,
     this.shift = 0,
+    this.idle = false,
   });
 
   /// Night window in minutes after midnight (may cross midnight).
@@ -29,11 +30,17 @@ final class DisplayState extends Equatable {
   final bool orbit;
   final int shift;
 
+  /// No touch for a while: day brightness drops to [idleBrightness].
+  final bool idle;
+
   /// Night overlay + dimming: manual, or auto inside the window unless exited by tap.
   bool get night => manual || (auto && inWin && !suppressed);
 
   /// Dim and freeze animations: at night or when the battery is hot.
   bool get dim => night || overheat;
+
+  /// null = follow the system brightness.
+  double? get brightness => dim ? nightBrightness : (idle ? idleBrightness : null);
 
   DisplayState copyWith({
     int? startMin,
@@ -46,6 +53,7 @@ final class DisplayState extends Equatable {
     bool? overheat,
     bool? orbit,
     int? shift,
+    bool? idle,
   }) =>
       DisplayState(
         startMin: startMin ?? this.startMin,
@@ -58,8 +66,9 @@ final class DisplayState extends Equatable {
         overheat: overheat ?? this.overheat,
         orbit: orbit ?? this.orbit,
         shift: shift ?? this.shift,
+        idle: idle ?? this.idle,
       );
 
   @override
-  List<Object> get props => [startMin, endMin, nightBrightness, inWin, auto, manual, suppressed, overheat, orbit, shift];
+  List<Object> get props => [startMin, endMin, nightBrightness, inWin, auto, manual, suppressed, overheat, orbit, shift, idle];
 }

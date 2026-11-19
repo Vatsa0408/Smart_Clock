@@ -70,6 +70,25 @@ class MainActivity : FlutterActivity() {
                 else -> result.notImplemented()
             }
         }
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "smart_clock/charge").setMethodCallHandler { call, result ->
+            when (call.method) {
+                "protectState" -> result.success(ProtectBattery.read(this))
+                "serviceEnabled" -> result.success(ProtectBattery.serviceEnabled(this))
+                "setProtect" -> {
+                    try {
+                        ProtectBattery.request(this, call.argument<Boolean>("on")!!)
+                        result.success(null)
+                    } catch (e: Exception) {
+                        result.error("launch", e.message, null)
+                    }
+                }
+                "openA11y" -> {
+                    startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                    result.success(null)
+                }
+                else -> result.notImplemented()
+            }
+        }
         registerBatteryReceiver()
         val messenger = flutterEngine.dartExecutor.binaryMessenger
         EventChannel(messenger, "smart_clock/now_playing/events").setStreamHandler(object : EventChannel.StreamHandler {
@@ -178,6 +197,10 @@ class MainActivity : FlutterActivity() {
             "level" to if (level >= 0 && scale > 0) level * 100 / scale else null,
             "isCharging" to (i?.getIntExtra(BatteryManager.EXTRA_STATUS, -1) == BatteryManager.BATTERY_STATUS_CHARGING),
             "tempC" to if (temp == Int.MIN_VALUE) null else temp / 10.0,
+            "plugged" to ((i?.getIntExtra(BatteryManager.EXTRA_PLUGGED, 0) ?: 0) != 0),
+            // CURRENT_NOW is microamps on Samsung; positive = charging. null when unsupported.
+            "currentMa" to (getSystemService(BATTERY_SERVICE) as BatteryManager)
+                .getIntProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_NOW).takeIf { it != Int.MIN_VALUE && it != 0 }?.let { it / 1000 },
             "overheat" to (i?.getIntExtra(BatteryManager.EXTRA_HEALTH, 0) == BatteryManager.BATTERY_HEALTH_OVERHEAT),
         )
     }

@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../charge_control/charge_control_bloc.dart';
 import '../../diagnostics/diagnostics_bloc.dart';
 import '../../now_playing/now_playing_bloc.dart';
 import '../settings_bloc.dart';
@@ -47,6 +48,29 @@ class _SettingsPageState extends State<SettingsPage> {
       initialTime: TimeOfDay(hour: current ~/ 60, minute: current % 60),
     );
     return t == null ? null : t.hour * 60 + t.minute;
+  }
+
+  static String _protectStatus(ChargeControlState c) => switch (c.status) {
+    _ when !c.serviceEnabled => 'Enable the accessibility service',
+    ProtectStatus.switching => 'Switching, the tablet restarts',
+    ProtectStatus.failed => 'Change did not apply',
+    ProtectStatus.serviceOff => 'Enable the accessibility service',
+    _ => 'Accessibility service enabled',
+  };
+
+  Future<void> _fix(BuildContext context, bool on) async {
+    final bloc = context.read<ChargeControlBloc>();
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (d) => AlertDialog(
+        content: const Text('This restarts the tablet (about 1 min). Continue?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(d, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(d, true), child: const Text('Continue')),
+        ],
+      ),
+    );
+    if (ok == true) bloc.add(ChargeControlProtectWanted(on));
   }
 
   @override
@@ -113,6 +137,34 @@ class _SettingsPageState extends State<SettingsPage> {
                   value: s.overheatC.clamp(38.0, 55.0),
                   onChanged: (v) => bloc.add(SettingsOverheatChanged(v)),
                 ),
+              ),
+              BlocBuilder<ChargeControlBloc, ChargeControlState>(
+                builder: (context, c) => c.protectOn == null
+                    ? const SizedBox.shrink() // Windows, or not read yet
+                    : Column(
+                        children: [
+                          const _Header('Battery protection'),
+                          SwitchListTile(
+                            title: const Text('Keep Protect battery ON (holds charge at about 85%)'),
+                            value: s.keepProtect,
+                            onChanged: (v) => bloc.add(SettingsKeepProtectToggled(v)),
+                          ),
+                          ListTile(
+                            title: Text('Protect battery is ${c.protectOn! ? 'ON' : 'OFF'}'),
+                            subtitle: Text(_protectStatus(c)),
+                            trailing: c.protectOn != s.keepProtect && c.status != ProtectStatus.switching
+                                ? FilledButton(
+                                    onPressed: () => _fix(context, s.keepProtect),
+                                    child: Text(s.keepProtect ? 'Fix' : 'Turn off'),
+                                  )
+                                : null,
+                          ),
+                          ListTile(
+                            title: const Text('Open Accessibility settings'),
+                            onTap: () => context.read<ChargeControlBloc>().add(const ChargeControlAccessibilityOpened()),
+                          ),
+                        ],
+                      ),
               ),
               const _Header('Display'),
               SwitchListTile(

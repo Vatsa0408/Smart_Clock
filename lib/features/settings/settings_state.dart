@@ -10,6 +10,7 @@ final class SettingsState extends Equatable {
     this.burnInOrbit = true,
     this.nightAuto = true,
     this.ambient = true,
+    this.keepProtect = true,
   });
 
   final int nightStartMin, nightEndMin, lowBatteryPct;
@@ -20,6 +21,9 @@ final class SettingsState extends Equatable {
   /// Night mode starts by itself in the window / dims with room light (stored only: no light-sensor source yet).
   final bool nightAuto, ambient;
 
+  /// Keep Samsung Protect battery (85 % hold) ON; the alert level reuses [lowBatteryPct].
+  final bool keepProtect;
+
   SettingsState copyWith({
     int? nightStartMin,
     int? nightEndMin,
@@ -29,6 +33,7 @@ final class SettingsState extends Equatable {
     bool? burnInOrbit,
     bool? nightAuto,
     bool? ambient,
+    bool? keepProtect,
   }) => SettingsState(
     nightStartMin: nightStartMin ?? this.nightStartMin,
     nightEndMin: nightEndMin ?? this.nightEndMin,
@@ -38,6 +43,7 @@ final class SettingsState extends Equatable {
     burnInOrbit: burnInOrbit ?? this.burnInOrbit,
     nightAuto: nightAuto ?? this.nightAuto,
     ambient: ambient ?? this.ambient,
+    keepProtect: keepProtect ?? this.keepProtect,
   );
 
   /// Primitives only, and never secrets (bindkeys, tokens): those go to a file.
@@ -50,6 +56,7 @@ final class SettingsState extends Equatable {
     'bo': burnInOrbit,
     'na': nightAuto,
     'am': ambient,
+    'cp': keepProtect,
   };
 
   /// Each key falls back to its default, so adding fields later needs no migration.
@@ -62,6 +69,7 @@ final class SettingsState extends Equatable {
     burnInOrbit: j['bo'] as bool? ?? true,
     nightAuto: j['na'] as bool? ?? true,
     ambient: j['am'] as bool? ?? true,
+    keepProtect: j['cp'] as bool? ?? true,
   );
 
   @override
@@ -74,5 +82,6 @@ final class SettingsState extends Equatable {
     burnInOrbit,
     nightAuto,
     ambient,
+    keepProtect,
   ];
 }

@@ -49,6 +49,7 @@ void main() {
       burnInOrbit: false,
       nightAuto: false,
       ambient: false,
+      keepProtect: false,
     );
     expect(SettingsState.fromJson(s.toJson()), s);
     expect(SettingsState.fromJson({}), const SettingsState());
@@ -61,6 +62,7 @@ void main() {
       'bo',
       'na',
       'am',
+      'cp',
     });
   });
 }

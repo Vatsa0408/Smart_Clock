@@ -12,6 +12,9 @@ part 'display_state.dart';
 bool inWindow(int m, int start, int end) =>
     start <= end ? m >= start && m < end : m >= start || m < end;
 
+/// Screen brightness while idle by day (no touch for a while).
+const idleBrightness = 0.5;
+
 /// Burn-in orbit position: one of 8 steps, advancing every 5 minutes.
 int orbitIndex(DateTime t) => (t.hour * 60 + t.minute) ~/ 5 % 8;
 
@@ -50,6 +53,7 @@ class DisplayBloc extends Bloc<DisplayEvent, DisplayState> {
       (e, emit) => _apply(emit, state.copyWith(manual: e.on, suppressed: e.on ? false : state.suppressed)),
     );
     on<DisplayNightExited>((e, emit) => _apply(emit, state.copyWith(manual: false, suppressed: true)));
+    on<DisplayIdleSet>((e, emit) => _apply(emit, state.copyWith(idle: e.on)));
     on<DisplayOverheatChanged>((e, emit) => _apply(emit, state.copyWith(overheat: e.on)));
   }
 
@@ -58,8 +62,8 @@ class DisplayBloc extends Bloc<DisplayEvent, DisplayState> {
 
   /// Talks to the platform only when the effective brightness changes.
   Future<void> _apply(Emitter<DisplayState> emit, DisplayState next) async {
-    final want = next.dim ? next.nightBrightness : null;
-    final had = state.dim ? state.nightBrightness : null;
+    final want = next.brightness;
+    final had = state.brightness;
     if (want != had) await _store.setBrightness(want);
     emit(next);
   }

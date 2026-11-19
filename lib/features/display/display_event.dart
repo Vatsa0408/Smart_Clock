@@ -40,3 +40,9 @@ final class DisplayNightManualSet extends DisplayEvent {
 final class DisplayNightExited extends DisplayEvent {
   const DisplayNightExited();
 }
+
+/// No touch for a while (true) or touched again (false): dims to [idleBrightness] by day.
+final class DisplayIdleSet extends DisplayEvent {
+  const DisplayIdleSet(this.on);
+  final bool on;
+}
