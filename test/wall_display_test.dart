@@ -6,22 +6,30 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hydrated_bloc/hydrated_bloc.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:smart_clock/features/alarms/alarms_bloc.dart';
+import 'package:smart_clock/features/calendar/calendar_bloc.dart';
+import 'package:smart_clock/features/calendar/calendar_store.dart';
 import 'package:smart_clock/features/clock/clock_bloc.dart';
+import 'package:smart_clock/features/controls/controls_bloc.dart';
 import 'package:smart_clock/features/device_battery/device_battery_bloc.dart';
 import 'package:smart_clock/features/device_battery/device_battery_store.dart';
 import 'package:smart_clock/features/diagnostics/diagnostics_bloc.dart';
 import 'package:smart_clock/features/diagnostics/diagnostics_store.dart';
 import 'package:smart_clock/features/display/display_bloc.dart';
 import 'package:smart_clock/features/display/display_store.dart';
+import 'package:smart_clock/features/display/view/night_overlay.dart';
 import 'package:smart_clock/features/dock/dock_bloc.dart';
 import 'package:smart_clock/features/dock/dock_store.dart';
 import 'package:smart_clock/features/now_playing/now_playing_bloc.dart';
 import 'package:smart_clock/features/now_playing/now_playing_store.dart';
+import 'package:smart_clock/features/panel/panel_bloc.dart';
 import 'package:smart_clock/features/sensor/sensor_bloc.dart';
 import 'package:smart_clock/features/sensor/sensor_store.dart';
 import 'package:smart_clock/features/settings/settings_bloc.dart';
 import 'package:smart_clock/features/settings/settings_store.dart';
 import 'package:smart_clock/features/settings/view/settings_page.dart';
+import 'package:smart_clock/features/timers/timers_bloc.dart';
+import 'package:smart_clock/features/todo/todo_bloc.dart';
 import 'package:smart_clock/features/weather/weather_bloc.dart';
 import 'package:smart_clock/features/weather/weather_store.dart';
 import 'package:smart_clock/main.dart';
@@ -49,6 +57,12 @@ void main() {
         BlocProvider(create: (_) => WeatherBloc(const SampleWeatherStore())..add(const WeatherRequested())),
         BlocProvider(create: (_) => SensorBloc(const SampleSensorStore())),
         BlocProvider(create: (_) => DockBloc(const DockStore())),
+        BlocProvider(create: (_) => AlarmsBloc()),
+        BlocProvider(create: (_) => TimersBloc()),
+        BlocProvider(create: (_) => TodoBloc()),
+        BlocProvider(create: (_) => ControlsBloc()),
+        BlocProvider(create: (_) => CalendarBloc(const CalendarStore())..add(const CalendarRequested())),
+        BlocProvider(create: (_) => PanelBloc()),
         BlocProvider(create: (_) => NowPlayingBloc(const NowPlayingStore())),
         BlocProvider(create: (_) => DisplayBloc(const DisplayStore())),
         BlocProvider(create: (_) => DeviceBatteryBloc(DeviceBatteryStore())),
@@ -59,6 +73,40 @@ void main() {
     expect(find.text('Bangalore · India'), findsOneWidget);
     expect(find.text('YouTube Music'), findsOneWidget);
     expect(tester.takeException(), isNull);
+    // Every tool panel opens and closes without layout errors.
+    for (final tool in ['Alarms', 'Timers and stopwatch', 'Quick controls', 'To-do list', 'Night mode']) {
+      await tester.tap(find.bySemanticsLabel(tool));
+      await tester.pump(const Duration(milliseconds: 100)); // first frame of the slide-up
+      await tester.pump(const Duration(seconds: 1));
+      expect(tester.takeException(), isNull, reason: tool);
+      await tester.tap(find.bySemanticsLabel('Close'));
+      await tester.pump(const Duration(seconds: 1));
+    }
+    // Alarm editor, ringing overlay, night overlay.
+    final ctx = tester.element(find.byType(WallDisplay));
+    Future<void> settle() async {
+      await tester.pump(const Duration(milliseconds: 100));
+      await tester.pump(const Duration(seconds: 1));
+      expect(tester.takeException(), isNull);
+    }
+
+    await tester.tap(find.bySemanticsLabel('Alarms'));
+    await settle();
+    await tester.tap(find.text('Weekend'));
+    await settle();
+    await tester.tap(find.text('Preview'));
+    await settle();
+    expect(find.text('Dismiss'), findsOneWidget);
+    await tester.tap(find.text('Dismiss'));
+    await settle();
+    expect(find.text('Dismiss'), findsNothing);
+    ctx.read<PanelBloc>().add(const PanelClosed());
+    ctx.read<DisplayBloc>().add(const DisplayNightManualSet(true));
+    await settle();
+    expect(find.byType(NightOverlay), findsOneWidget);
+    await tester.tapAt(const Offset(640, 400));
+    await settle();
+    expect(ctx.read<DisplayBloc>().state.night, isFalse);
     await tester.tap(find.text('App settings'));
     await tester.pump(const Duration(seconds: 1));
     await tester.pump(const Duration(seconds: 1));

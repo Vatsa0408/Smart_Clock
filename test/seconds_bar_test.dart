@@ -7,9 +7,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hydrated_bloc/hydrated_bloc.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:smart_clock/features/alarms/alarms_bloc.dart';
+import 'package:smart_clock/features/calendar/calendar_bloc.dart';
+import 'package:smart_clock/features/calendar/calendar_store.dart';
 import 'package:smart_clock/features/clock/clock_bloc.dart';
 import 'package:smart_clock/features/clock/clock_store.dart';
 import 'package:smart_clock/features/clock/view/clock_cards.dart';
+import 'package:smart_clock/features/panel/panel_bloc.dart';
+import 'package:smart_clock/features/timers/timers_bloc.dart';
 import 'package:smart_clock/features/weather/weather_bloc.dart';
 import 'package:smart_clock/features/weather/weather_store.dart';
 
@@ -45,6 +50,10 @@ void main() {
         providers: [
           BlocProvider(create: (_) => ClockBloc(store: _FakeStore(c))),
           BlocProvider(create: (_) => WeatherBloc(const SampleWeatherStore())),
+          BlocProvider(create: (_) => AlarmsBloc()),
+          BlocProvider(create: (_) => TimersBloc()),
+          BlocProvider(create: (_) => CalendarBloc(const CalendarStore())),
+          BlocProvider(create: (_) => PanelBloc()),
         ],
         child: const MaterialApp(home: Scaffold(body: SizedBox(width: 800, height: 700, child: LocalCard()))),
       ));

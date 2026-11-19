@@ -47,6 +47,8 @@ void main() {
       lowBatteryPct: 33,
       overheatC: 50,
       burnInOrbit: false,
+      nightAuto: false,
+      ambient: false,
     );
     expect(SettingsState.fromJson(s.toJson()), s);
     expect(SettingsState.fromJson({}), const SettingsState());
@@ -57,6 +59,8 @@ void main() {
       'lb',
       'oh',
       'bo',
+      'na',
+      'am',
     });
   });
 }

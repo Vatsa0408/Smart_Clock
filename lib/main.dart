@@ -6,29 +6,39 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hydrated_bloc/hydrated_bloc.dart';
 import 'package:path_provider/path_provider.dart';
 
+import 'features/alarms/alarms_bloc.dart';
+import 'features/alarms/view/ringing_overlay.dart';
+import 'features/calendar/calendar_bloc.dart';
+import 'features/calendar/calendar_store.dart';
 import 'features/clock/clock_bloc.dart';
 import 'features/clock/view/clock_cards.dart';
+import 'features/controls/controls_bloc.dart';
 import 'features/device_battery/device_battery_bloc.dart';
 import 'features/device_battery/device_battery_store.dart';
 import 'features/diagnostics/diagnostics_bloc.dart';
 import 'features/diagnostics/diagnostics_store.dart';
 import 'features/display/display_bloc.dart';
 import 'features/display/display_store.dart';
+import 'features/display/view/night_overlay.dart';
 import 'features/dock/dock_bloc.dart';
 import 'features/dock/dock_store.dart';
 import 'features/dock/view/dock_bar.dart';
 import 'features/now_playing/now_playing_bloc.dart';
 import 'features/now_playing/now_playing_store.dart';
 import 'features/now_playing/view/now_playing_bar.dart';
+import 'features/panel/panel_bloc.dart';
+import 'features/panel/view/panel_sheet.dart';
+import 'features/panel/view/tools_dock.dart';
 import 'features/sensor/sensor_bloc.dart';
 import 'features/settings/settings_bloc.dart';
 import 'features/settings/settings_store.dart';
-import 'features/settings/view/settings_entry.dart';
 import 'features/sensor/sensor_store.dart';
 import 'features/sensor/view/sensor_strip.dart';
+import 'features/timers/timers_bloc.dart';
+import 'features/todo/todo_bloc.dart';
 import 'features/weather/weather_bloc.dart';
 import 'features/weather/weather_store.dart';
-import 'shared/ui.dart';
+import 'shared/idle_pager.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -82,6 +92,12 @@ class SmartClockApp extends StatelessWidget {
               SensorBloc(const BleSensorStore())..add(const SensorRequested()),
         ),
         BlocProvider(create: (_) => DockBloc(const DockStore())),
+        BlocProvider(create: (_) => AlarmsBloc()),
+        BlocProvider(create: (_) => TimersBloc()),
+        BlocProvider(create: (_) => TodoBloc()),
+        BlocProvider(create: (_) => ControlsBloc()),
+        BlocProvider(create: (_) => CalendarBloc(const CalendarStore())..add(const CalendarRequested())),
+        BlocProvider(create: (_) => PanelBloc()),
         BlocProvider(
           create: (_) =>
               NowPlayingBloc(const NowPlayingStore())..add(const NowPlayingStarted()),
@@ -97,7 +113,8 @@ class SmartClockApp extends StatelessWidget {
                   s.nightBrightness,
                 ),
               )
-              ..add(DisplayOrbitSet(s.burnInOrbit));
+              ..add(DisplayOrbitSet(s.burnInOrbit))
+              ..add(DisplayAutoSet(s.nightAuto));
           },
         ),
         BlocProvider(
@@ -128,6 +145,22 @@ class SmartClockApp extends StatelessWidget {
                 s.nightBrightness,
               ),
             ),
+          ),
+          BlocListener<ClockBloc, ClockState>(
+            listenWhen: (a, b) => a.now.minute != b.now.minute,
+            listener: (c, s) => c.read<AlarmsBloc>().add(AlarmMinuteTicked(s.now)),
+          ),
+          BlocListener<ClockBloc, ClockState>(
+            listenWhen: (a, b) => a.now != b.now,
+            listener: (c, _) => c.read<TimersBloc>().add(const TimersTicked()),
+          ),
+          BlocListener<AlarmsBloc, AlarmsState>(
+            listenWhen: (a, b) => a.ringing == null && b.ringing != null,
+            listener: (c, _) => c.read<PanelBloc>().add(const PanelClosed()),
+          ),
+          BlocListener<SettingsBloc, SettingsState>(
+            listenWhen: (a, b) => a.nightAuto != b.nightAuto,
+            listener: (c, s) => c.read<DisplayBloc>().add(DisplayAutoSet(s.nightAuto)),
           ),
           BlocListener<SettingsBloc, SettingsState>(
             listenWhen: (a, b) => a.burnInOrbit != b.burnInOrbit,
@@ -218,110 +251,56 @@ class WallDisplay extends StatelessWidget {
                   BlocSelector<DisplayBloc, DisplayState, int>(
                     selector: (s) => s.shift,
                     builder: (_, i) => Transform.translate(
-                      offset: _orbit[i],
-                      child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 32,
-                      vertical: 18,
-                    ),
-                    child: Column(
-                      children: [
-                        // Top row: App settings button, now playing, battery indicators
-                        Row(
+                      offset: orbitOffsets[i],
+                      child: const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 32, vertical: 28),
+                        child: Column(
+                          spacing: 16,
                           children: [
-                            const SettingsEntry(),
-                            const SizedBox(width: 12),
-                            const Expanded(child: NowPlayingBar()),
-                            const _BatteryRow(),
+                            Expanded(
+                              child: IdlePager(
+                                pages: [
+                                  Row(
+                                    spacing: 16,
+                                    children: [
+                                      Expanded(flex: 175, child: LocalCard()),
+                                      Expanded(
+                                        flex: 100,
+                                        child: Column(
+                                          spacing: 16,
+                                          children: [
+                                            Expanded(child: IndiaCard()),
+                                            NowPlayingBar(),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                            SizedBox(
+                              height: 100,
+                              child: Row(
+                                spacing: 12,
+                                children: [Expanded(child: DockBar()), ToolsDock()],
+                              ),
+                            ),
+                            SizedBox(height: 76, child: SensorStrip()),
                           ],
                         ),
-                        const Expanded(
-                          child: Row(
-                            children: [
-                              Expanded(flex: 175, child: LocalCard()),
-                              SizedBox(width: 20),
-                              Expanded(flex: 100, child: IndiaCard()),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        const SizedBox(height: 116, child: DockBar()),
-                        const SizedBox(height: 20),
-                        const SizedBox(height: 92, child: SensorStrip()),
-                      ],
-                    ),
                       ),
                     ),
                   ),
+                  const PanelSheet(),
+                  const NightOverlay(),
+                  const RingingOverlay(),
                 ],
               ),
             ),
           ),
         ),
       ),
-    );
-  }
-}
-
-const _hot = Color(0xFFF44336);
-
-/// Burn-in orbit positions: 4 px steps around the origin.
-const _orbit = [
-  Offset.zero,
-  Offset(4, 0),
-  Offset(4, 4),
-  Offset(0, 4),
-  Offset(-4, 4),
-  Offset(-4, 0),
-  Offset(-4, -4),
-  Offset(0, -4),
-];
-
-/// Tablet battery (and overheat badge) and averaged sensor battery.
-class _BatteryRow extends StatelessWidget {
-  const _BatteryRow();
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        BlocBuilder<DeviceBatteryBloc, DeviceBatteryState>(
-          builder: (_, state) => Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (state.overheat) ...[
-                const Icon(Icons.thermostat, color: _hot, size: 22),
-                Text('${state.tempC?.round() ?? '!'}°C', style: flex(20, 600, _hot)),
-                const SizedBox(width: 16),
-              ],
-              if (state.level != null)
-                BatteryIndicator(percentage: state.level!, isCharging: state.isCharging),
-            ],
-          ),
-        ),
-        const SizedBox(width: 16),
-        // Sensor battery (average of all sensors)
-        BlocBuilder<SensorBloc, SensorState>(
-          buildWhen: (a, b) {
-            if (a.rooms.length != b.rooms.length) return true;
-            for (var i = 0; i < a.rooms.length; i++) {
-              if (a.rooms[i].battery != b.rooms[i].battery) return true;
-            }
-            return false;
-          },
-          builder: (_, state) {
-            final batteries = state.rooms
-                .where((r) => r.configured && r.battery != null)
-                .map((r) => r.battery!)
-                .toList();
-            if (batteries.isEmpty) return const SizedBox.shrink();
-            final avgBattery =
-                (batteries.reduce((a, b) => a + b) / batteries.length).round();
-            return BatteryIndicator(percentage: avgBattery);
-          },
-        ),
-      ],
     );
   }
 }

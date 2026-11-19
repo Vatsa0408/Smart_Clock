@@ -21,7 +21,7 @@ class SensorStrip extends StatelessWidget {
     return Row(
       children: [
         for (final (i, r) in rooms.indexed) ...[
-          if (i > 0) const SizedBox(width: 20),
+          if (i > 0) const SizedBox(width: 16),
           Expanded(
             child: Rise(
               key: ValueKey(r.name),
@@ -48,20 +48,20 @@ class _RoomCard extends StatelessWidget {
     final stale = age == null || age! >= _staleAfter;
     final t = room.temperature;
     final h = room.humidity;
-    final value = flex(34, 600, Colors.white, em: -.02, height: 1, tabular: true);
+    final value = flex(30, 600, Colors.white, em: -.02, height: 1, tabular: true);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 26),
       decoration: BoxDecoration(
         color: const Color(0xFF211F26),
-        borderRadius: BorderRadius.circular(40),
+        borderRadius: BorderRadius.circular(38),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(stale && age != null ? '${room.name} · ${ageLabel(age!)}' : room.name, style: flex(18, 600, const Color(0xFFCAC4D0), height: 1), overflow: TextOverflow.ellipsis),
-          const SizedBox(height: 8),
+          Text(stale && age != null ? '${room.name} · ${ageLabel(age!)}' : room.name, style: flex(17, 600, const Color(0xFFCAC4D0), height: 1), overflow: TextOverflow.ellipsis),
+          const SizedBox(height: 6),
           Opacity(
             opacity: stale ? .45 : 1,
             child: Row(
@@ -74,7 +74,7 @@ class _RoomCard extends StatelessWidget {
               ),
               const SizedBox(width: 10),
               Text(t == null ? '--°C' : '${t.toStringAsFixed(1)}°C', style: value),
-              const SizedBox(width: 22),
+              const SizedBox(width: 32), // design: 10 px gap + 12 px spacer + 10 px gap
               Loop(
                 builder: (_, s) => Transform.translate(
                   offset: Offset(0, -3 * wave(s, 3.6)), // bob: 3.6s
@@ -100,9 +100,9 @@ class _Badge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        width: 36,
-        height: 36,
+        width: 32,
+        height: 32,
         decoration: BoxDecoration(color: bg, shape: BoxShape.circle),
-        child: Icon(icon, size: 20, color: fg),
+        child: Icon(icon, size: 18, color: fg),
       );
 }

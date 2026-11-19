@@ -8,12 +8,17 @@ final class SettingsState extends Equatable {
     this.lowBatteryPct = 20,
     this.overheatC = 45.0,
     this.burnInOrbit = true,
+    this.nightAuto = true,
+    this.ambient = true,
   });
 
   final int nightStartMin, nightEndMin, lowBatteryPct;
   final double nightBrightness;
   final double overheatC;
   final bool burnInOrbit;
+
+  /// Night mode starts by itself in the window / dims with room light (stored only: no light-sensor source yet).
+  final bool nightAuto, ambient;
 
   SettingsState copyWith({
     int? nightStartMin,
@@ -22,6 +27,8 @@ final class SettingsState extends Equatable {
     int? lowBatteryPct,
     double? overheatC,
     bool? burnInOrbit,
+    bool? nightAuto,
+    bool? ambient,
   }) => SettingsState(
     nightStartMin: nightStartMin ?? this.nightStartMin,
     nightEndMin: nightEndMin ?? this.nightEndMin,
@@ -29,6 +36,8 @@ final class SettingsState extends Equatable {
     lowBatteryPct: lowBatteryPct ?? this.lowBatteryPct,
     overheatC: overheatC ?? this.overheatC,
     burnInOrbit: burnInOrbit ?? this.burnInOrbit,
+    nightAuto: nightAuto ?? this.nightAuto,
+    ambient: ambient ?? this.ambient,
   );
 
   /// Primitives only, and never secrets (bindkeys, tokens): those go to a file.
@@ -39,6 +48,8 @@ final class SettingsState extends Equatable {
     'lb': lowBatteryPct,
     'oh': overheatC,
     'bo': burnInOrbit,
+    'na': nightAuto,
+    'am': ambient,
   };
 
   /// Each key falls back to its default, so adding fields later needs no migration.
@@ -49,6 +60,8 @@ final class SettingsState extends Equatable {
     lowBatteryPct: (j['lb'] as num?)?.toInt() ?? 20,
     overheatC: (j['oh'] as num?)?.toDouble() ?? 45.0,
     burnInOrbit: j['bo'] as bool? ?? true,
+    nightAuto: j['na'] as bool? ?? true,
+    ambient: j['am'] as bool? ?? true,
   );
 
   @override
@@ -59,5 +72,7 @@ final class SettingsState extends Equatable {
     lowBatteryPct,
     overheatC,
     burnInOrbit,
+    nightAuto,
+    ambient,
   ];
 }

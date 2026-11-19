@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../shared/ui.dart';
 import '../../clock/clock_bloc.dart';
+import '../../panel/panel_bloc.dart';
 import '../weather_bloc.dart';
 
 /// Icon + temp + condition + H/L row; [bangalore] picks the reading and palette.
@@ -25,22 +26,24 @@ class WeatherRow extends StatelessWidget {
     if (w == null) return const SizedBox.shrink();
     final age = at == null ? null : DateTime.now().difference(at);
     final stale = age == null || age > const Duration(minutes: 45);
-    return Opacity(
+    return GestureDetector(
+      onTap: () => context.read<PanelBloc>().add(const PanelOpened(PanelKind.forecast)),
+      child: Opacity(
       opacity: stale ? .55 : 1,
       child: Row(
           children: [
-            _WeatherIcon(rain: bangalore, size: big ? 112 : 88, badge: accent, fg: fg),
-            SizedBox(width: big ? 28 : 22),
-            Text('${w.temp}°', style: flex(big ? 88 : 72, 600, Colors.white, em: -.03, height: 1)),
-            SizedBox(width: big ? 28 : 22),
+            _WeatherIcon(rain: bangalore, size: big ? 96 : 84, badge: accent, fg: fg),
+            SizedBox(width: big ? 24 : 20),
+            Text('${w.temp}°', style: flex(big ? 80 : 68, 600, Colors.white, em: -.03, height: 1)),
+            SizedBox(width: big ? 24 : 20),
             Flexible(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(w.condition, style: flex(big ? 30 : 24, 600, text), overflow: TextOverflow.ellipsis),
+                  Text(w.condition, style: flex(big ? 28 : 24, 600, text), overflow: TextOverflow.ellipsis),
                   const SizedBox(height: 4),
-                  Text('H ${w.high}° · L ${w.low}°', style: flex(big ? 22 : 20, 500, accent)),
+                  Text('H ${w.high}° · L ${w.low}°', style: flex(20, 500, accent)),
                   if (stale && age != null)
                     Text('Updated ${ageLabel(age)}', style: flex(16, 500, accent.withValues(alpha: .8))),
                 ],
@@ -48,6 +51,7 @@ class WeatherRow extends StatelessWidget {
             ),
           ],
         ),
+      ),
     );
   }
 }

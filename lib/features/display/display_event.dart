@@ -24,3 +24,19 @@ final class DisplayOverheatChanged extends DisplayEvent {
   const DisplayOverheatChanged(this.on);
   final bool on;
 }
+
+final class DisplayAutoSet extends DisplayEvent {
+  const DisplayAutoSet(this.on);
+  final bool on;
+}
+
+/// Night mode switched on by hand (night panel).
+final class DisplayNightManualSet extends DisplayEvent {
+  const DisplayNightManualSet(this.on);
+  final bool on;
+}
+
+/// Tap on the night overlay: leave night mode until the window ends.
+final class DisplayNightExited extends DisplayEvent {
+  const DisplayNightExited();
+}
