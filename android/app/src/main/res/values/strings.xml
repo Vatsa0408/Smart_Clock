@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="protect_battery_service_label">Smart Clock battery protection</string>
+    <string name="protect_battery_service_desc">Taps the Protect battery switch in Samsung battery settings when you ask for it in Smart Clock. It only runs in that screen.</string>
+</resources>

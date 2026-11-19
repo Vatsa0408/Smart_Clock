@@ -8,7 +8,7 @@ import 'package:smart_clock/features/device_battery/device_battery_store.dart';
 class _MockStore extends Mock implements DeviceBatteryStore {}
 
 BatterySample _s(int level, {bool charging = false, double? t, bool hot = false}) =>
-    (level: level, charging: charging, tempC: t, healthOverheat: hot);
+    (level: level, charging: charging, plugged: charging, currentMa: null, tempC: t, healthOverheat: hot);
 
 void main() {
   late _MockStore store;
@@ -86,5 +86,18 @@ void main() {
     await start(_s(80, t: 30));
     await push(_s(80, t: 30, hot: true));
     expect(bloc.state.overheat, isTrue);
+  });
+
+  test('low alert holds until 4% above the threshold and clears when plugged', () async {
+    await start(_s(25));
+    final seen = <bool>[];
+    for (final l in [20, 23, 24]) {
+      await push(_s(l));
+      seen.add(bloc.state.low);
+    }
+    await push(_s(10));
+    await push(_s(10, charging: true));
+    seen.add(bloc.state.low);
+    expect(seen, [true, true, false, false]);
   });
 }

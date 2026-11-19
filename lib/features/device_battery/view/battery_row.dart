@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../shared/ui.dart';
+import '../../charge_control/charge_control_bloc.dart';
 import '../../sensor/sensor_bloc.dart';
 import '../device_battery_bloc.dart';
 
 const _hot = Color(0xFFF44336);
+const _ok = Color(0xFF4CAF50);
+const _warn = Color(0xFFFFB300);
 
 /// Tablet battery (and overheat badge) and averaged sensor battery.
 class BatteryRow extends StatelessWidget {
@@ -27,6 +30,23 @@ class BatteryRow extends StatelessWidget {
               ],
               if (state.level != null)
                 BatteryIndicator(percentage: state.level!, isCharging: state.isCharging),
+            ],
+          ),
+        ),
+        BlocBuilder<ChargeControlBloc, ChargeControlState>(
+          builder: (_, c) => Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (c.protectOn != null)
+                Padding(
+                  padding: const EdgeInsets.only(left: 8),
+                  child: Icon(Icons.shield, size: 20, color: c.protectOn! ? _ok : _warn),
+                ),
+              if (c.weakCharger)
+                Padding(
+                  padding: const EdgeInsets.only(left: 8),
+                  child: Text('Charger too weak for this screen', style: flex(16, 500, _warn)),
+                ),
             ],
           ),
         ),

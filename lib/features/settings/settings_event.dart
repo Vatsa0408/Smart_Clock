@@ -42,6 +42,11 @@ final class SettingsNightAutoToggled extends SettingsEvent {
   final bool on;
 }
 
+final class SettingsKeepProtectToggled extends SettingsEvent {
+  const SettingsKeepProtectToggled(this.on);
+  final bool on;
+}
+
 final class SettingsAmbientToggled extends SettingsEvent {
   const SettingsAmbientToggled(this.on);
   final bool on;

@@ -3,7 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/services.dart';
 
-typedef BatterySample = ({int? level, bool charging, double? tempC, bool healthOverheat});
+typedef BatterySample = ({int? level, bool charging, bool plugged, int? currentMa, double? tempC, bool healthOverheat});
 
 /// Owns the `smart_clock/battery` channel (Android only).
 class DeviceBatteryStore {
@@ -31,6 +31,8 @@ class DeviceBatteryStore {
   static BatterySample _parse(Map<String, Object?> a) => (
         level: (a['level'] as num?)?.toInt(),
         charging: a['isCharging'] as bool? ?? false,
+        plugged: a['plugged'] as bool? ?? false,
+        currentMa: (a['currentMa'] as num?)?.toInt(),
         tempC: (a['tempC'] as num?)?.toDouble(),
         healthOverheat: a['overheat'] as bool? ?? false,
       );

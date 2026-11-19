@@ -25,6 +25,7 @@ class SettingsBloc extends HydratedBloc<SettingsEvent, SettingsState> {
     );
     on<SettingsBurnInToggled>((e, emit) => emit(state.copyWith(burnInOrbit: e.on)));
     on<SettingsNightAutoToggled>((e, emit) => emit(state.copyWith(nightAuto: e.on)));
+    on<SettingsKeepProtectToggled>((e, emit) => emit(state.copyWith(keepProtect: e.on)));
     on<SettingsAmbientToggled>((e, emit) => emit(state.copyWith(ambient: e.on)));
     on<SettingsHomeAppPickerOpened>((e, _) => _store.openHomeSettings());
     on<SettingsAndroidSettingsOpened>((e, _) => _store.openAndroidSettings());

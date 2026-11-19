@@ -10,15 +10,19 @@ import 'features/alarms/alarms_bloc.dart';
 import 'features/alarms/view/ringing_overlay.dart';
 import 'features/calendar/calendar_bloc.dart';
 import 'features/calendar/calendar_store.dart';
+import 'features/charge_control/charge_control_bloc.dart';
+import 'features/charge_control/charge_control_store.dart';
 import 'features/clock/clock_bloc.dart';
 import 'features/clock/view/clock_cards.dart';
 import 'features/controls/controls_bloc.dart';
 import 'features/device_battery/device_battery_bloc.dart';
 import 'features/device_battery/device_battery_store.dart';
+import 'features/device_battery/view/low_battery_banner.dart';
 import 'features/diagnostics/diagnostics_bloc.dart';
 import 'features/diagnostics/diagnostics_store.dart';
 import 'features/display/display_bloc.dart';
 import 'features/display/display_store.dart';
+import 'features/display/view/idle_dimmer.dart';
 import 'features/display/view/night_overlay.dart';
 import 'features/dock/dock_bloc.dart';
 import 'features/dock/dock_store.dart';
@@ -117,6 +121,7 @@ class SmartClockApp extends StatelessWidget {
               ..add(DisplayAutoSet(s.nightAuto));
           },
         ),
+        BlocProvider(create: (_) => ChargeControlBloc(const ChargeControlStore())..add(const ChargeControlStarted())),
         BlocProvider(
           create: (c) {
             final s = c.read<SettingsBloc>().state;
@@ -176,6 +181,12 @@ class SmartClockApp extends StatelessWidget {
             listenWhen: (a, b) => a.overheat != b.overheat,
             listener: (c, s) => c.read<DisplayBloc>().add(DisplayOverheatChanged(s.overheat)),
           ),
+          BlocListener<DeviceBatteryBloc, DeviceBatteryState>(
+            listenWhen: (a, b) => a.plugged != b.plugged || a.currentMa != b.currentMa || a.level != b.level,
+            listener: (c, s) => c.read<ChargeControlBloc>().add(
+              ChargeControlBatteryChanged(level: s.level, plugged: s.plugged, currentMa: s.currentMa),
+            ),
+          ),
           BlocListener<DisplayBloc, DisplayState>(
             listenWhen: (a, b) => a.night != b.night,
             listener: (c, s) => c.read<DeviceBatteryBloc>().add(
@@ -225,13 +236,15 @@ class WallDisplay extends StatelessWidget {
       builder: (context, dim) => MediaQuery(
         // Night/overheat: freeze the Loop animations (reuses the reduced-motion path).
         data: mq.copyWith(disableAnimations: mq.disableAnimations || dim),
-        child: Stack(
+        child: IdleDimmer(
+         child: Stack(
           fit: StackFit.expand,
           children: [
             _wall(),
             if (dim)
               const IgnorePointer(child: ColoredBox(color: Color(0x80000000))),
           ],
+         ),
         ),
       ),
     );
@@ -294,6 +307,7 @@ class WallDisplay extends StatelessWidget {
                   ),
                   const PanelSheet(),
                   const NightOverlay(),
+                  const LowBatteryBanner(),
                   const RingingOverlay(),
                 ],
               ),
